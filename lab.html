@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>s0lid142 — R&D Lab</title>
+  <title>s0lid142 — Discografía / Releases</title>
   <style>
     :root {
       --bg-black: #0F110E;
@@ -65,7 +65,7 @@
       line-height: 1.5;
     }
 
-    /* Tarjetas de Proyectos */
+    /* Tarjetas de Proyectos / Canciones */
     .project-card {
       background: var(--surface-dark);
       border: 1px solid var(--border-subtle);
@@ -94,9 +94,13 @@
 
     .project-tech {
       font-size: 0.7rem;
-      color: var(--brand-blue);
+      color: var(--accent-neon);
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    .project-tech.coming {
+      color: #e58e26;
     }
 
     .project-desc {
@@ -110,6 +114,7 @@
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
+      margin-bottom: 16px;
     }
 
     .tag {
@@ -118,6 +123,24 @@
       padding: 4px 10px;
       border-radius: 4px;
       font-size: 0.75rem;
+    }
+
+    .btn-link {
+      display: inline-block;
+      color: var(--bg-black);
+      background-color: var(--text-main);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .btn-link:hover {
+      background-color: var(--accent-neon);
     }
 
     footer {
@@ -135,53 +158,44 @@
   <div class="container">
     <header>
       <a href="index.html" class="nav-link">← Volver a la Galería</a>
-      <h1>XXXXX</h1>
-      <p class="bio">XXXXXXXXX</p>
+      <h1>Releases & Singles</h1>
+      <p class="bio">Catálogo de instrumentales y sencillos independientes distribuidos a través de Tres Tristes Tigres.</p>
     </header>
 
     <main>
+      <!-- Canción 1: Coming Soon -->
       <article class="project-card">
         <div class="project-header">
-          <h2 class="project-title">XXXX</h2>
-          <span class="project-tech">XXXX</span>
+          <h2 class="project-title">Totes por el Euska</h2>
+          <span class="project-tech coming">Coming Soon</span>
         </div>
-        <p class="project-desc">XXXXX</p>
+        <p class="project-desc">Próximo lanzamiento oficial en plataformas. Mantente al tanto del estreno a través del enlace de pre-guardado.</p>
         <div class="tags">
-          <span class="tag">XXX</span>
-          <span class="tag">XXX</span>
-          <span class="tag">XXX</span>
+          <span class="tag">Single</span>
+          <span class="tag">Instrumental</span>
+          <span class="tag">Lo-Fi / Trap</span>
         </div>
+        <a href="https://distrokid.com/hyperfollow/s0lid142/totes-por-el-euska?ref=release" target="_blank" class="btn-link">Pre-Save / Hyperfollow</a>
       </article>
 
+      <!-- Canción 2: Ya disponible -->
       <article class="project-card">
         <div class="project-header">
-          <h2 class="project-title">XXX</h2>
-          <span class="project-tech">XXXX</span>
+          <h2 class="project-title">Ceros en Celo</h2>
+          <span class="project-tech">Available</span>
         </div>
-        <p class="project-desc">XXXX</p>
+        <p class="project-desc">Sencillo independiente enfocado en texturas de boom bap y ambientes rítmicos oscuros.</p>
         <div class="tags">
-          <span class="tag">XXX</span>
-          <span class="tag">XX</span>
-          <span class="tag">XXX</span>
+          <span class="tag">Single</span>
+          <span class="tag">Boom Bap</span>
+          <span class="tag">Beatmaking</span>
         </div>
-      </article>
-
-      <article class="project-card">
-        <div class="project-header">
-          <h2 class="project-title">XX</h2>
-          <span class="project-tech">XXX</span>
-        </div>
-        <p class="project-desc">XXXXX</p>
-        <div class="tags">
-          <span class="tag">XXX</span>
-          <span class="tag">XXXX</span>
-          <span class="tag">XXXXX</span>
-        </div>
+        <a href="https://distrokid.com/hyperfollow/s0lid142/ceros-en-celo?ref=release" target="_blank" class="btn-link">Escuchar / Hyperfollow</a>
       </article>
     </main>
 
     <footer>
-      <p>s0lid142 // Lab</p>
+      <p>s0lid142 // Tres Tristes Tigres</p>
     </footer>
   </div>
 
