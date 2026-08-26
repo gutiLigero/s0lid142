@@ -151,15 +151,15 @@
     border: 1px solid var(--panel-border);
     overflow-x: auto;
     margin-top: 16px;
+    display: flex;
+    justify-content: center;
   }
 
   .keyboard {
     display: flex;
     position: relative;
     height: 140px;
-    justify-content: center;
     user-select: none;
-    min-width: 620px;
   }
 
   .key {
@@ -206,12 +206,12 @@
 
   .key.black:active, .key.black.active { background: #33333d; }
 
-  /* Posicionamiento exacto de las teclas negras sobre el espacio de las blancas (ancho 44px + 2px margen = 46px por paso) */
-  .kb-c-sharp { left: 31px; }
-  .kb-d-sharp { left: 77px; }
-  .kb-f-sharp { left: 169px; }
-  .kb-g-sharp { left: 215px; }
-  .kb-a-sharp { left: 261px; }
+  /* Desplazamientos precisos de las teclas negras */
+  .kb-c-sharp { left: 32px; }
+  .kb-d-sharp { left: 78px; }
+  .kb-f-sharp { left: 170px; }
+  .kb-g-sharp { left: 216px; }
+  .kb-a-sharp { left: 262px; }
 
   .footer-controls {
     margin-top: 15px;
@@ -250,7 +250,8 @@
 
     <div class="section-label">Oscillator Bank &amp; Mixer (4 VCOs paráfonos + ruido)</div>
     <div class="modules-row" id="osc-bank">
-      </div>
+      <!-- OSC modules injected by JS -->
+    </div>
 
     <div class="section-label">Filter · Envelopes · Modulation</div>
     <div class="modules-row">
