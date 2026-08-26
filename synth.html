@@ -380,6 +380,11 @@
    amplitud son ÚNICOS y compartidos — de ahí el término "paráfono".
    ========================================================================= */
 
+// 'interactive' prioriza latencia mínima sobre estabilidad del buffer —
+// correcto para un sinte tocado en vivo con teclado físico/virtual.
+// Debe fijarse antes de crear cualquier nodo de Tone.
+Tone.setContext(new Tone.Context({ latencyHint: 'interactive' }));
+
 class PolyDEngine {
   constructor() {
     this.oscCount = 4;
@@ -538,9 +543,35 @@ class PolyDEngine {
     this.ampEnv.release = release;
     this.filterEnv.release = frelease;
   }
+
+  // Corta cualquier nota sonando y limpia el estado de voces. Imprescindible
+  // antes de cambiar de modo de voz (poly/mono/unison): sin esto, una nota
+  // mantenida en el momento del cambio dejaba la envolvente de amplitud
+  // abierta para siempre (nota "colgada" sin forma de pararla salvo recargar).
+  stopAll() {
+    this.heldNotes = [];
+    this.slots.forEach(s => s.note = null);
+    this.ampEnv.triggerRelease();
+    this.filterEnv.triggerRelease();
+  }
 }
 
 const engine = new PolyDEngine();
+
+// Reanuda el AudioContext si el navegador lo suspendió al perder foco/pestaña
+// oculta, y suelta cualquier nota mantenida para no dejar sonido colgado.
+function releaseAllHeldNotes() {
+  [...engine.heldNotes].forEach(n => engine.noteOff(n.note));
+  document.querySelectorAll('.key.active').forEach(k => k.classList.remove('active'));
+}
+window.addEventListener('blur', releaseAllHeldNotes);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    releaseAllHeldNotes();
+  } else if (Tone.context.state === 'suspended') {
+    Tone.context.resume();
+  }
+});
 
 /* ---- Construcción dinámica de los 4 módulos de oscilador + ruido ---- */
 const oscBank = document.getElementById('osc-bank');
@@ -653,9 +684,8 @@ document.getElementById('lfo-to-pitch').addEventListener('input', e => engine.lf
 
 /* ---- Modo de voz / Glide ---- */
 document.getElementById('voice-mode').addEventListener('change', e => {
+  engine.stopAll();
   engine.mode = e.target.value;
-  engine.heldNotes = [];
-  engine.slots.forEach(s => s.note = null);
 });
 document.getElementById('glide-switch').addEventListener('change', e => engine.glide = e.target.checked);
 document.getElementById('glide-time').addEventListener('input', e => engine.glideTime = parseFloat(e.target.value));
@@ -683,6 +713,9 @@ document.querySelectorAll('.key').forEach(key => {
   key.addEventListener('mouseleave', () => { if (key.classList.contains('active')) release(); });
   key.addEventListener('touchstart', e => { e.preventDefault(); press(); }, { passive: false });
   key.addEventListener('touchend', e => { e.preventDefault(); release(); });
+  // Sin esto, un gesto del SO (notificación, cambio de app) que cancela el
+  // touch deja la tecla marcada "active" y su nota sonando indefinidamente.
+  key.addEventListener('touchcancel', e => { e.preventDefault(); release(); });
 });
 
 /* ---- Teclado físico (A-K) ---- */
