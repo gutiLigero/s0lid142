@@ -2,26 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sampler de video</title>
+    <title>s0lid142 — Video Sampler</title>
     <style>
-        body { background: #0F110E; color: #DDE1DB; font-family: sans-serif; text-align: center; padding: 40px; }
-        video { width: 100%; max-width: 600px; border: 1px solid rgba(182,191,177,0.2); margin-bottom: 20px; }
-        .pad { background: #151814; border: 1px solid #53FA00; color: #53FA00; padding: 20px; font-size: 1.2rem; cursor: pointer; margin: 10px; display: inline-block; }
+        :root {
+            --bg-black: #0F110E;
+            --surface-dark: #151814;
+            --text-main: #DDE1DB;
+            --text-muted: #B6BFB1;
+            --brand-green: #408C48;
+            --accent-neon: #53FA00;
+            --border-subtle: rgba(182, 191, 177, 0.18);
+        }
+
+        body { 
+            background-color: var(--bg-black); 
+            color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
+            text-align: center; 
+            padding: 40px 20px; 
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 300; margin-bottom: 20px; }
+
+        .control-panel {
+            background: var(--surface-dark);
+            border: 1px solid var(--border-subtle);
+            padding: 20px;
+            border-radius: 4px;
+            max-width: 600px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input[type="text"], input[type="file"] {
+            background: var(--bg-black);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+
+        button.load-btn {
+            background: var(--accent-neon);
+            color: var(--bg-black);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: opacity 0.2s;
+        }
+
+        button.load-btn:hover { opacity: 0.85; }
+
+        video { 
+            width: 100%; 
+            max-width: 600px; 
+            border: 1px solid var(--border-subtle); 
+            border-radius: 4px;
+            margin-bottom: 20px; 
+            background: #000;
+        }
+
+        .pad { 
+            background: var(--surface-dark); 
+            border: 1px solid var(--accent-neon); 
+            color: var(--accent-neon); 
+            padding: 20px 40px; 
+            font-size: 1rem; 
+            letter-spacing: 1px;
+            cursor: pointer; 
+            display: inline-block; 
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .pad:hover {
+            background: #1c211a;
+            box-shadow: 0 0 15px rgba(83, 250, 0, 0.15);
+        }
     </style>
 </head>
 <body>
 
-    <h1>Muestreo de vídeo</h1>
+    <h1>Muestreo de vídeo interactivo</h1>
     
-    <input type="file" id="videoUploader" accept="video/*">
-    <br><br>
-    
-    <video id="mediaVideo" controls></video>
+    <div class="control-panel">
+        <div style="display: flex; gap: 8px;">
+            <input type="text" id="videoUrlInput" placeholder="Pega un enlace directo a video (.mp4)...">
+            <button class="load-btn" id="loadUrlBtn">Cargar Link</button>
+        </div>
+        
+        <p style="font-size: 0.75rem; color: var(--text-muted);">O sube un archivo local:</p>
+        
+        <input type="file" id="videoUploader" accept="video/*">
+    </div>
+
+    <video id="mediaVideo" controls crossorigin="anonymous"></video>
     <br>
     
-    <div class="pad" id="cuePad">DISPARAR / LOOP</div>
+    <div class="pad" id="cuePad">DISPARAR / RE-TRIGGER (0s)</div>
 
     <script>
+        const urlInput = document.getElementById('videoUrlInput');
+        const loadUrlBtn = document.getElementById('loadUrlBtn');
         const uploader = document.getElementById('videoUploader');
         const videoElement = document.getElementById('mediaVideo');
         const cuePad = document.getElementById('cuePad');
@@ -29,30 +117,44 @@
         let audioCtx;
         let sourceNode;
 
-        // 1. Cargar el video seleccionado por el usuario
+        // 1. Cargar video mediante enlace de texto
+        loadUrlBtn.addEventListener('click', () => {
+            const url = urlInput.value.trim();
+            if (url) {
+                videoElement.src = url;
+                videoElement.load();
+            }
+        });
+
+        // 2. Cargar video mediante archivo local
         uploader.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 const fileURL = URL.createObjectURL(file);
                 videoElement.src = fileURL;
+                videoElement.load();
             }
         });
 
-        // 2. Inicializar Web Audio API al interactuar por primera vez
+        // 3. Inicializar Web Audio API al reproducir por primera vez (Requerimiento del navegador)
         videoElement.addEventListener('play', () => {
             if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                sourceNode = audioCtx.createMediaElementSource(videoElement);
-                sourceNode.connect(audioCtx.destination); // Conecta el audio a tus cornetas/salida
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    sourceNode = audioCtx.createMediaElementSource(videoElement);
+                    sourceNode.connect(audioCtx.destination);
+                } catch (e) {
+                    console.error("Error al conectar Web Audio API con el elemento de video:", e);
+                }
             }
-            if (audioCtx.state === 'suspended') {
+            if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume();
             }
         }, { once: true });
 
-        // 3. Ejemplo de función de sampleo (regresar al segundo 0 o trocear)
+        // 4. Función de sampleo (CUE / Re-trigger al inicio)
         cuePad.addEventListener('click', () => {
-            videoElement.currentTime = 0; // Vuelve al inicio del video (efecto scratch/retrigger)
+            videoElement.currentTime = 0;
             videoElement.play();
         });
     </script>
