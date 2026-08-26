@@ -9,6 +9,7 @@
     :root {
       --bg-black: #0F110E;
       --surface-dark: #151814;
+      --surface-raised: #1c211a;
       --text-main: #DDE1DB;
       --text-muted: #B6BFB1;
       --brand-blue: #4279CD;
@@ -34,7 +35,7 @@
 
     .machine-container {
       width: 100%;
-      max-width: 480px;
+      max-width: 640px;
       background: var(--surface-dark);
       border: 1px solid var(--border-subtle);
       border-radius: 8px;
@@ -53,10 +54,20 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     h2 { font-weight: 400; letter-spacing: -0.5px; }
-    
+    h3 {
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
     .midi-status {
       font-size: 0.75rem;
       letter-spacing: 1px;
@@ -71,8 +82,9 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: var(--accent-alert); 
+      background-color: var(--accent-alert);
       box-shadow: 0 0 5px var(--accent-alert);
+      flex-shrink: 0;
     }
 
     .midi-led.active {
@@ -84,17 +96,27 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
-    /* Botón de Mapeo */
-    .learn-btn {
+    button {
+      font-family: inherit;
+      cursor: pointer;
+    }
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--accent-neon);
+      outline-offset: 2px;
+    }
+
+    .learn-btn, .transport-btn, .panic-btn, .clear-btn {
       background: transparent;
       color: var(--text-muted);
       border: 1px solid var(--text-muted);
       padding: 6px 12px;
       border-radius: 4px;
       font-size: 0.75rem;
-      cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 1px;
       transition: all 0.2s ease;
@@ -107,6 +129,18 @@
       box-shadow: 0 0 10px rgba(83, 250, 0, 0.2);
     }
 
+    .transport-btn.playing {
+      background: rgba(66, 121, 205, 0.15);
+      color: var(--brand-blue);
+      border-color: var(--brand-blue);
+    }
+
+    .panic-btn {
+      color: var(--accent-alert);
+      border-color: var(--accent-alert);
+    }
+    .panic-btn:hover { background: rgba(255, 75, 75, 0.12); }
+
     #midi-debug {
       font-size: 0.7rem;
       color: var(--brand-blue);
@@ -117,7 +151,14 @@
       text-overflow: ellipsis;
     }
 
-    /* Grid de Pads (4x2) */
+    .section {
+      margin-top: 26px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .section:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+
+    /* --- Pads --- */
     .pad-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -126,13 +167,13 @@
 
     .pad {
       aspect-ratio: 1 / 1;
-      background: #1c211a;
+      background: var(--surface-raised);
       border: 1px solid var(--border-subtle);
       border-radius: 6px;
-      cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
+      align-items: flex-start;
       padding: 8px;
       font-size: 0.7rem;
       color: var(--text-muted);
@@ -141,6 +182,7 @@
       transition: all 0.05s ease;
       user-select: none;
       position: relative;
+      width: 100%;
     }
 
     .pad .midi-hint {
@@ -151,6 +193,16 @@
       color: var(--brand-blue);
       font-family: monospace;
       opacity: 0.7;
+    }
+
+    .pad .key-hint {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      font-family: monospace;
+      opacity: 0.5;
     }
 
     .pad:active, .pad.triggered {
@@ -173,6 +225,112 @@
       to { box-shadow: 0 0 15px var(--accent-alert); }
     }
 
+    /* --- Sequencer --- */
+    .transport-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .bpm-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .bpm-control input[type="number"] {
+      width: 56px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-family: monospace;
+    }
+
+    .swing-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+    .swing-control input[type="range"] { width: 80px; accent-color: var(--accent-neon); }
+
+    .seq-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .seq-row {
+      display: grid;
+      grid-template-columns: 64px repeat(16, 1fr);
+      gap: 3px;
+      align-items: center;
+    }
+
+    .seq-row-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .step-btn {
+      aspect-ratio: 1 / 1;
+      min-width: 18px;
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: 3px;
+      padding: 0;
+    }
+    .step-btn.beat-marker { border-color: rgba(182,191,177,0.35); }
+    .step-btn.on-normal { background: var(--brand-blue); border-color: var(--brand-blue); }
+    .step-btn.on-accent { background: var(--accent-neon); border-color: var(--accent-neon); }
+    .step-btn.playhead { box-shadow: 0 0 0 2px var(--text-main) inset; }
+
+    /* --- Mixer --- */
+    .mixer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .mixer-strip {
+      background: var(--surface-raised);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .mixer-strip .strip-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .mixer-strip label {
+      display: block;
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+
+    .mixer-strip input[type="range"] {
+      width: 100%;
+      accent-color: var(--brand-green);
+      margin-bottom: 8px;
+    }
+
     .back-btn {
       display: inline-block;
       margin-top: 30px;
@@ -185,6 +343,12 @@
     }
 
     .back-btn:hover { color: var(--accent-neon); }
+
+    .hint-text {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -199,198 +363,469 @@
         </div>
       </div>
       <div class="header-bottom">
-        <button id="learn-btn" class="learn-btn">🔗 Mapear Pads</button>
+        <button id="learn-btn" class="learn-btn" type="button">🔗 Mapear Pads</button>
+        <button id="panic-btn" class="panic-btn" type="button" title="Corta todo el sonido inmediatamente">⏹ Panic</button>
         <span id="midi-debug">Listo.</span>
       </div>
     </header>
 
-    <div class="pad-grid" id="pads-container">
-      <div class="pad" data-midi="36" data-sound="kick" id="pad-kick">
-        <span class="midi-hint">[36]</span>Kick
+    <div class="section">
+      <h3>Pads</h3>
+      <div class="pad-grid" id="pads-container"></div>
+      <p class="hint-text">Ratón, touch, teclado de PC (letras) o tu controlador MIDI. La velocity de tu controlador se respeta.</p>
+    </div>
+
+    <div class="section">
+      <h3>Secuenciador (16 pasos)</h3>
+      <div class="transport-row">
+        <button id="transport-btn" class="transport-btn" type="button">▶ Play</button>
+        <button id="clear-btn" class="clear-btn" type="button">Limpiar patrón</button>
+        <div class="bpm-control">
+          <span>BPM</span>
+          <input type="number" id="bpm-input" min="40" max="240" value="120">
+        </div>
+        <div class="swing-control">
+          <span>Swing</span>
+          <input type="range" id="swing-input" min="0" max="0.5" step="0.01" value="0">
+        </div>
       </div>
-      <div class="pad" data-midi="38" data-sound="snare" id="pad-snare">
-        <span class="midi-hint">[38]</span>Snare
-      </div>
-      <div class="pad" data-midi="42" data-sound="hihatC" id="pad-hihatC">
-        <span class="midi-hint">[42]</span>Hat C.
-      </div>
-      <div class="pad" data-midi="46" data-sound="hihatO" id="pad-hihatO">
-        <span class="midi-hint">[46]</span>Hat O.
-      </div>
-      <div class="pad" data-midi="45" data-sound="tomL" id="pad-tomL">
-        <span class="midi-hint">[45]</span>Tom L
-      </div>
-      <div class="pad" data-midi="50" data-sound="tomH" id="pad-tomH">
-        <span class="midi-hint">[50]</span>Tom H
-      </div>
-      <div class="pad" data-midi="39" data-sound="clap" id="pad-clap">
-        <span class="midi-hint">[39]</span>Clap
-      </div>
-      <div class="pad" data-midi="49" data-sound="crash" id="pad-crash">
-        <span class="midi-hint">[49]</span>Crash
-      </div>
+      <div class="seq-grid" id="seq-grid"></div>
+      <p class="hint-text">Clic en un paso: apagado → normal (azul) → acento (verde) → apagado. El patrón se guarda automáticamente.</p>
+    </div>
+
+    <div class="section">
+      <h3>Mixer por pad</h3>
+      <div class="mixer-grid" id="mixer-grid"></div>
     </div>
   </div>
-  
+
   <a href="index.html" class="back-btn">← Volver al catálogo</a>
 
-  <script>
-    // --- 1. MOTOR DE AUDIO (Tone.js) ---
-    const synths = {
-      kick: new Tone.MembraneSynth().toDestination(),
-      snare: new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0 } }).toDestination(),
-      hihatC: new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 0.1, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination(),
-      hihatO: new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 0.4, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination(),
-      tomL: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, envelope: { attack: 0.01, decay: 0.4, sustain: 0 } }).toDestination(),
-      tomH: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, envelope: { attack: 0.01, decay: 0.4, sustain: 0 } }).toDestination(),
-      clap: new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0 } }).toDestination(),
-      crash: new Tone.MetalSynth({ frequency: 300, envelope: { attack: 0.001, decay: 1.5, release: 0.2 }, harmonicity: 4, modulationIndex: 40, resonance: 2000 }).toDestination()
-    };
+<script>
+/* =========================================================================
+   1. CONFIGURACIÓN DE PADS (una sola fuente de verdad)
+   ========================================================================= */
+const PAD_CONFIG = [
+  { id: 'kick',   label: 'Kick',   midi: 36, key: 'q', type: 'membrane', note: 'C1',
+    make: () => new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 6, envelope: { attack: 0.001, decay: 0.4, sustain: 0 } }) },
+  { id: 'snare',  label: 'Snare',  midi: 38, key: 'w', type: 'noise',
+    make: () => new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0 } }) },
+  { id: 'hihatC', label: 'Hat C.', midi: 42, key: 'e', type: 'metal', baseFreq: 200, chokeGroup: 'hihat',
+    make: () => new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 0.1, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }) },
+  { id: 'hihatO', label: 'Hat O.', midi: 46, key: 'r', type: 'metal', baseFreq: 200, chokeGroup: 'hihat',
+    make: () => new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 0.4, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }) },
+  { id: 'tomL',   label: 'Tom L',  midi: 45, key: 'a', type: 'membrane', note: 'G1',
+    make: () => new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, envelope: { attack: 0.01, decay: 0.4, sustain: 0 } }) },
+  { id: 'tomH',   label: 'Tom H',  midi: 50, key: 's', type: 'membrane', note: 'C2',
+    make: () => new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, envelope: { attack: 0.01, decay: 0.4, sustain: 0 } }) },
+  { id: 'clap',   label: 'Clap',   midi: 39, key: 'd', type: 'noise',
+    make: () => new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0 } }) },
+  { id: 'crash',  label: 'Crash',  midi: 49, key: 'f', type: 'metal', baseFreq: 300,
+    make: () => new Tone.MetalSynth({ frequency: 300, envelope: { attack: 0.001, decay: 1.5, release: 0.2 }, harmonicity: 4, modulationIndex: 40, resonance: 2000 }) }
+];
+const STEP_COUNT = 16;
 
-    async function playSound(padElement) {
-      await Tone.start();
-      const soundType = padElement.getAttribute('data-sound');
-      if (soundType === 'kick' || soundType === 'tomL' || soundType === 'tomH') {
-        synths[soundType].triggerAttackRelease(soundType === 'kick' ? "C1" : soundType === 'tomL' ? "G1" : "C2", "8n");
-      } else {
-        synths[soundType].triggerAttackRelease("16n");
-      }
-      padElement.classList.add('triggered');
-      setTimeout(() => padElement.classList.remove('triggered'), 100);
-    }
+/* =========================================================================
+   2. BUS MÁSTER: cada pad -> su propia ganancia -> masterGain -> limiter
+   ========================================================================= */
+const limiter = new Tone.Limiter(-1).toDestination();
+const masterGain = new Tone.Gain(0.85).connect(limiter);
 
-    // --- 2. LÓGICA DE MAPEO (MIDI LEARN) Y MEMORIA ---
-    let learnMode = false;
-    let padToBind = null;
+/* =========================================================================
+   3. ESTADO POR PAD (synth, ganancia, tune, choke group, timing seguro)
+   ========================================================================= */
+const padStates = {};
+PAD_CONFIG.forEach(cfg => {
+  const synth = cfg.make();
+  const gain = new Tone.Gain(0.85).connect(masterGain);
+  synth.connect(gain);
+  padStates[cfg.id] = { config: cfg, synth, gain, tune: 0, lastTime: 0 };
+});
 
-    function loadSavedMidiMap() {
-      const savedMap = JSON.parse(localStorage.getItem('s0lid142_midi_map'));
-      if (savedMap) {
-        document.querySelectorAll('.pad').forEach(pad => {
-          const sound = pad.getAttribute('data-sound');
-          if (savedMap[sound]) {
-            pad.setAttribute('data-midi', savedMap[sound]);
-            pad.querySelector('.midi-hint').innerText = `[${savedMap[sound]}]`;
-          }
-        });
-      }
-    }
-    loadSavedMidiMap();
+/* =========================================================================
+   4. DISPARO SEGURO (evita colisiones de tiempo, aplica velocity + choke)
+   ========================================================================= */
+function triggerPad(id, velocity = 1, atTime = null) {
+  const state = padStates[id];
+  if (!state) return;
+  const cfg = state.config;
+  const now = atTime !== null ? atTime : Tone.now();
+  // Tone.js exige tiempos de inicio estrictamente crecientes por instrumento;
+  // forzamos un mínimo por encima del último disparo para evitar errores.
+  const t = Math.max(now, state.lastTime + 0.0015);
+  state.lastTime = t;
+  const vel = Math.min(1, Math.max(0.05, velocity));
 
-    const learnBtn = document.getElementById('learn-btn');
-    learnBtn.addEventListener('click', () => {
-      learnMode = !learnMode;
-      learnBtn.classList.toggle('active', learnMode);
-      
-      if (learnMode) {
-        learnBtn.innerText = "Selecciona un pad web 👇";
-      } else {
-        learnBtn.innerText = "🔗 Mapear Pads";
-        if (padToBind) padToBind.classList.remove('binding');
-        padToBind = null;
-      }
-    });
-
-    document.querySelectorAll('.pad').forEach(pad => {
-      pad.addEventListener('mousedown', () => {
-        if (learnMode) {
-          document.querySelectorAll('.pad').forEach(p => p.classList.remove('binding'));
-          padToBind = pad;
-          pad.classList.add('binding');
-          learnBtn.innerText = "Toca tu controlador 🎹";
-        } else {
-          playSound(pad);
+  try {
+    // Choke group: p.ej. el hi-hat abierto se corta al pisar el cerrado
+    if (cfg.chokeGroup) {
+      Object.values(padStates).forEach(other => {
+        if (other !== state && other.config.chokeGroup === cfg.chokeGroup) {
+          try { other.synth.triggerRelease(t); } catch (e) { /* ya estaba libre */ }
         }
       });
+    }
+
+    if (cfg.type === 'membrane') {
+      const note = Tone.Frequency(cfg.note).transpose(state.tune).toNote();
+      state.synth.triggerAttackRelease(note, '8n', t, vel);
+    } else if (cfg.type === 'metal') {
+      state.synth.frequency.value = cfg.baseFreq * Math.pow(2, state.tune / 12);
+      state.synth.triggerAttackRelease('16n', t, vel);
+    } else {
+      state.synth.noise.playbackRate = Math.pow(2, state.tune / 12);
+      state.synth.triggerAttackRelease('16n', t, vel);
+    }
+  } catch (err) {
+    console.warn(`No se pudo disparar el pad "${id}":`, err);
+  }
+
+  flashPad(id);
+}
+
+function flashPad(id) {
+  const el = document.getElementById(`pad-${id}`);
+  if (!el) return;
+  el.classList.add('triggered');
+  setTimeout(() => el.classList.remove('triggered'), 100);
+}
+
+async function ensureAudioStarted() {
+  if (Tone.context.state !== 'running') await Tone.start();
+}
+
+/* =========================================================================
+   5. RENDER DE PADS (botones accesibles generados desde config)
+   ========================================================================= */
+const padsContainer = document.getElementById('pads-container');
+PAD_CONFIG.forEach(cfg => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pad';
+  btn.id = `pad-${cfg.id}`;
+  btn.dataset.midi = cfg.midi;
+  btn.dataset.sound = cfg.id;
+  btn.setAttribute('aria-label', `${cfg.label}, nota MIDI ${cfg.midi}, tecla ${cfg.key.toUpperCase()}`);
+  btn.innerHTML = `
+    <span class="key-hint">${cfg.key.toUpperCase()}</span>
+    <span class="midi-hint">[${cfg.midi}]</span>
+    ${cfg.label}
+  `;
+  padsContainer.appendChild(btn);
+
+  const onPress = async (velocity = 0.9) => {
+    await ensureAudioStarted();
+    if (learnMode) {
+      document.querySelectorAll('.pad').forEach(p => p.classList.remove('binding'));
+      padToBind = cfg.id;
+      btn.classList.add('binding');
+      learnBtn.innerText = 'Toca tu controlador 🎹';
+    } else {
+      triggerPad(cfg.id, velocity);
+    }
+  };
+
+  btn.addEventListener('mousedown', () => onPress());
+  btn.addEventListener('touchstart', e => { e.preventDefault(); onPress(); }, { passive: false });
+});
+
+/* =========================================================================
+   6. FALLBACK DE TECLADO DE PC
+   ========================================================================= */
+const keyToPad = Object.fromEntries(PAD_CONFIG.map(c => [c.key, c.id]));
+window.addEventListener('keydown', async (e) => {
+  if (e.repeat) return;
+  const id = keyToPad[e.key.toLowerCase()];
+  if (!id) return;
+  await ensureAudioStarted();
+  if (learnMode) {
+    document.querySelectorAll('.pad').forEach(p => p.classList.remove('binding'));
+    padToBind = id;
+    document.getElementById(`pad-${id}`).classList.add('binding');
+    learnBtn.innerText = 'Toca tu controlador 🎹';
+  } else {
+    triggerPad(id, 0.9);
+  }
+});
+
+/* =========================================================================
+   7. MIDI LEARN + PERSISTENCIA (mapa de notas)
+   ========================================================================= */
+let learnMode = false;
+let padToBind = null;
+const learnBtn = document.getElementById('learn-btn');
+
+function loadSavedMidiMap() {
+  try {
+    const savedMap = JSON.parse(localStorage.getItem('s0lid142_midi_map'));
+    if (!savedMap) return;
+    PAD_CONFIG.forEach(cfg => {
+      if (savedMap[cfg.id] !== undefined) {
+        cfg.midi = savedMap[cfg.id];
+        const pad = document.getElementById(`pad-${cfg.id}`);
+        pad.dataset.midi = cfg.midi;
+        pad.querySelector('.midi-hint').innerText = `[${cfg.midi}]`;
+      }
     });
+  } catch (e) { /* sin mapa guardado o corrupto: se ignora */ }
+}
+loadSavedMidiMap();
 
-    function saveMidiMap() {
-      const currentMap = {};
-      document.querySelectorAll('.pad').forEach(pad => {
-        currentMap[pad.getAttribute('data-sound')] = pad.getAttribute('data-midi');
+function saveMidiMap() {
+  const currentMap = {};
+  PAD_CONFIG.forEach(cfg => { currentMap[cfg.id] = cfg.midi; });
+  localStorage.setItem('s0lid142_midi_map', JSON.stringify(currentMap));
+}
+
+learnBtn.addEventListener('click', () => {
+  learnMode = !learnMode;
+  learnBtn.classList.toggle('active', learnMode);
+  if (learnMode) {
+    learnBtn.innerText = 'Selecciona un pad web 👇';
+  } else {
+    learnBtn.innerText = '🔗 Mapear Pads';
+    if (padToBind) document.getElementById(`pad-${padToBind}`).classList.remove('binding');
+    padToBind = null;
+  }
+});
+
+/* =========================================================================
+   8. WEBMIDI: estado, velocity real, y disparo por nota
+   ========================================================================= */
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+}
+
+function updateMidiStatus(midiAccess) {
+  const activeDevices = [];
+  for (const input of midiAccess.inputs.values()) {
+    if (input.state === 'connected') {
+      activeDevices.push(input.name);
+      input.onmidimessage = getMIDIMessage;
+    }
+  }
+  const led = document.getElementById('midi-led');
+  const text = document.getElementById('midi-text');
+  const debug = document.getElementById('midi-debug');
+
+  if (activeDevices.length > 0) {
+    led.classList.add('active');
+    text.innerText = 'MIDI ON';
+    if (!debug.innerText.includes('Cmd:')) debug.innerText = `🔌 ${activeDevices[0]}`;
+  } else {
+    led.classList.remove('active');
+    text.innerText = 'MIDI OFF';
+    debug.innerText = 'Desconectado.';
+  }
+}
+
+function onMIDISuccess(midiAccess) {
+  updateMidiStatus(midiAccess);
+  midiAccess.onstatechange = (e) => {
+    updateMidiStatus(midiAccess);
+    if (e.port.state === 'disconnected' && e.port.type === 'input') {
+      document.getElementById('midi-debug').innerText = '❌ Desconectado';
+    }
+  };
+}
+
+function onMIDIFailure() {
+  document.getElementById('midi-debug').innerText = 'Error acceso MIDI.';
+}
+
+async function getMIDIMessage(message) {
+  const command = message.data[0];
+  const note = message.data[1];
+  const rawVelocity = message.data.length > 2 ? message.data[2] : 0;
+
+  document.getElementById('midi-debug').innerText = `Cmd: ${command} | Nota: ${note} | Vel: ${rawVelocity}`;
+
+  const isNoteOn = command >= 144 && command <= 159 && rawVelocity > 0;
+  if (!isNoteOn) return;
+
+  await ensureAudioStarted();
+
+  if (learnMode && padToBind) {
+    const cfg = PAD_CONFIG.find(c => c.id === padToBind);
+    cfg.midi = note;
+    const pad = document.getElementById(`pad-${padToBind}`);
+    pad.dataset.midi = note;
+    pad.querySelector('.midi-hint').innerText = `[${note}]`;
+    pad.classList.remove('binding');
+    padToBind = null;
+    learnBtn.innerText = 'Asignado ✅ Selecciona otro';
+    saveMidiMap();
+    return;
+  }
+
+  const cfg = PAD_CONFIG.find(c => c.midi === note);
+  if (cfg) triggerPad(cfg.id, rawVelocity / 127);
+}
+
+/* =========================================================================
+   9. SECUENCIADOR DE 16 PASOS (con acento) + PERSISTENCIA DE PATRÓN
+   ========================================================================= */
+const stepsPerPad = {};
+PAD_CONFIG.forEach(cfg => { stepsPerPad[cfg.id] = new Array(STEP_COUNT).fill(0); });
+
+function loadSavedPattern() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('s0lid142_pattern'));
+    if (!saved) return;
+    if (saved.steps) {
+      Object.keys(saved.steps).forEach(id => {
+        if (stepsPerPad[id]) stepsPerPad[id] = saved.steps[id];
       });
-      localStorage.setItem('s0lid142_midi_map', JSON.stringify(currentMap));
     }
+    if (saved.bpm) Tone.Transport.bpm.value = saved.bpm;
+    if (saved.swing !== undefined) Tone.Transport.swing = saved.swing;
+  } catch (e) { /* sin patrón guardado: se usa el patrón vacío por defecto */ }
+}
 
-    // --- 3. MOTOR WebMIDI MEJORADO ---
-    if (navigator.requestMIDIAccess) {
-      navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+function savePattern() {
+  localStorage.setItem('s0lid142_pattern', JSON.stringify({
+    steps: stepsPerPad,
+    bpm: Tone.Transport.bpm.value,
+    swing: Tone.Transport.swing
+  }));
+}
+
+const seqGrid = document.getElementById('seq-grid');
+function renderSequencerGrid() {
+  seqGrid.innerHTML = '';
+  PAD_CONFIG.forEach(cfg => {
+    const row = document.createElement('div');
+    row.className = 'seq-row';
+    const label = document.createElement('span');
+    label.className = 'seq-row-label';
+    label.innerText = cfg.label;
+    row.appendChild(label);
+
+    for (let step = 0; step < STEP_COUNT; step++) {
+      const stepBtn = document.createElement('button');
+      stepBtn.type = 'button';
+      stepBtn.className = 'step-btn' + (step % 4 === 0 ? ' beat-marker' : '');
+      stepBtn.id = `step-${cfg.id}-${step}`;
+      stepBtn.setAttribute('aria-label', `${cfg.label}, paso ${step + 1}`);
+      applyStepVisual(stepBtn, stepsPerPad[cfg.id][step]);
+      stepBtn.addEventListener('click', () => {
+        const current = stepsPerPad[cfg.id][step];
+        const next = (current + 1) % 3; // off -> normal -> acento -> off
+        stepsPerPad[cfg.id][step] = next;
+        applyStepVisual(stepBtn, next);
+        savePattern();
+      });
+      row.appendChild(stepBtn);
     }
+    seqGrid.appendChild(row);
+  });
+}
 
-    function updateMidiStatus(midiAccess) {
-      let activeDevices = [];
-      
-      // Recolectar nombres de dispositivos realmente conectados
-      for (let input of midiAccess.inputs.values()) {
-        if (input.state === "connected") {
-          activeDevices.push(input.name);
-          input.onmidimessage = getMIDIMessage; 
-        }
-      }
+function applyStepVisual(btn, value) {
+  btn.classList.remove('on-normal', 'on-accent');
+  if (value === 1) btn.classList.add('on-normal');
+  if (value === 2) btn.classList.add('on-accent');
+}
 
-      const led = document.getElementById('midi-led');
-      const text = document.getElementById('midi-text');
-      const debug = document.getElementById('midi-debug');
+function updatePlayheadUI(step) {
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('playhead'));
+  PAD_CONFIG.forEach(cfg => {
+    const el = document.getElementById(`step-${cfg.id}-${step}`);
+    if (el) el.classList.add('playhead');
+  });
+}
 
-      if (activeDevices.length > 0) {
-        led.classList.add('active');
-        text.innerText = "MIDI ON";
-        
-        // Mostrar qué dispositivo específico se reconoció
-        if (!debug.innerText.includes("Cmd:")) {
-          debug.innerText = `🔌 ${activeDevices[0]}`;
-        }
-      } else {
-        led.classList.remove('active');
-        text.innerText = "MIDI OFF";
-        debug.innerText = "Desconectado.";
-      }
-    }
+const sequence = new Tone.Sequence((time, step) => {
+  PAD_CONFIG.forEach(cfg => {
+    const value = stepsPerPad[cfg.id][step];
+    if (value > 0) triggerPad(cfg.id, value === 2 ? 1.0 : 0.75, time);
+  });
+  Tone.Draw.schedule(() => updatePlayheadUI(step), time);
+}, [...Array(STEP_COUNT).keys()], '16n');
 
-    function onMIDISuccess(midiAccess) {
-      updateMidiStatus(midiAccess);
-      
-      // Manejar explícitamente eventos de conexión y desconexión
-      midiAccess.onstatechange = (e) => {
-        updateMidiStatus(midiAccess);
-        
-        // Mensaje extra si el cable se desconecta
-        if (e.port.state === "disconnected" && e.port.type === "input") {
-           document.getElementById('midi-debug').innerText = "❌ Desconectado";
-        }
-      };
-    }
+const transportBtn = document.getElementById('transport-btn');
+transportBtn.addEventListener('click', async () => {
+  await ensureAudioStarted();
+  if (Tone.Transport.state === 'started') {
+    Tone.Transport.stop();
+    sequence.stop();
+    transportBtn.classList.remove('playing');
+    transportBtn.innerText = '▶ Play';
+    document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('playhead'));
+  } else {
+    sequence.start(0);
+    Tone.Transport.start();
+    transportBtn.classList.add('playing');
+    transportBtn.innerText = '⏸ Stop';
+  }
+});
 
-    function onMIDIFailure() {
-      document.getElementById('midi-debug').innerText = "Error acceso MIDI.";
-    }
+document.getElementById('clear-btn').addEventListener('click', () => {
+  PAD_CONFIG.forEach(cfg => stepsPerPad[cfg.id].fill(0));
+  renderSequencerGrid();
+  savePattern();
+});
 
-    function getMIDIMessage(message) {
-      const command = message.data[0];
-      const note = message.data[1];
-      const velocity = (message.data.length > 2) ? message.data[2] : 0;
+const bpmInput = document.getElementById('bpm-input');
+bpmInput.addEventListener('change', e => {
+  const val = Math.min(240, Math.max(40, parseInt(e.target.value) || 120));
+  Tone.Transport.bpm.value = val;
+  bpmInput.value = val;
+  savePattern();
+});
 
-      // Monitor constante en pantalla
-      document.getElementById('midi-debug').innerText = `Cmd: ${command} | Nota: ${note}`;
+const swingInput = document.getElementById('swing-input');
+swingInput.addEventListener('input', e => {
+  Tone.Transport.swing = parseFloat(e.target.value);
+  savePattern();
+});
 
-      const isNoteOn = (command >= 144 && command <= 159);
+/* =========================================================================
+   10. MIXER POR PAD (tune + nivel)
+   ========================================================================= */
+const mixerGrid = document.getElementById('mixer-grid');
+PAD_CONFIG.forEach(cfg => {
+  const strip = document.createElement('div');
+  strip.className = 'mixer-strip';
+  strip.innerHTML = `
+    <div class="strip-label">${cfg.label}</div>
+    <label for="tune-${cfg.id}">Tune</label>
+    <input type="range" id="tune-${cfg.id}" min="-12" max="12" step="1" value="0">
+    <label for="level-${cfg.id}">Nivel</label>
+    <input type="range" id="level-${cfg.id}" min="0" max="1" step="0.02" value="0.85">
+  `;
+  mixerGrid.appendChild(strip);
 
-      if (isNoteOn && velocity > 0) {
-        if (learnMode && padToBind) {
-          padToBind.setAttribute('data-midi', note);
-          padToBind.querySelector('.midi-hint').innerText = `[${note}]`;
-          padToBind.classList.remove('binding');
-          padToBind = null;
-          learnBtn.innerText = "Asignado ✅ Selecciona otro";
-          saveMidiMap();
-        } else {
-          const padToTrigger = document.querySelector(`.pad[data-midi="${note}"]`);
-          if (padToTrigger) {
-            playSound(padToTrigger);
-          }
-        }
-      }
-    }
-  </script>
+  strip.querySelector(`#tune-${cfg.id}`).addEventListener('input', e => {
+    padStates[cfg.id].tune = parseFloat(e.target.value);
+  });
+  strip.querySelector(`#level-${cfg.id}`).addEventListener('input', e => {
+    padStates[cfg.id].gain.gain.rampTo(parseFloat(e.target.value), 0.02);
+  });
+});
+
+/* =========================================================================
+   11. PANIC / STOP-ALL
+   ========================================================================= */
+document.getElementById('panic-btn').addEventListener('click', () => {
+  const now = Tone.now();
+  Object.values(padStates).forEach(state => {
+    try { state.synth.triggerRelease(now); } catch (e) { /* algunos synths no sostienen nota */ }
+  });
+  // Red de seguridad extra: duckea el bus máster un instante para cortar colas largas (crash, hat abierto)
+  masterGain.gain.cancelScheduledValues(now);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.linearRampToValueAtTime(0, now + 0.02);
+  masterGain.gain.linearRampToValueAtTime(0.85, now + 0.08);
+});
+
+/* =========================================================================
+   12. INICIALIZACIÓN
+   ========================================================================= */
+loadSavedPattern();
+bpmInput.value = Tone.Transport.bpm.value;
+swingInput.value = Tone.Transport.swing;
+renderSequencerGrid();
+</script>
 </body>
 </html>
