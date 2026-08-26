@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-TFLKS522');</script>
+  <!-- End Google Tag Manager -->
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>s0lid142 — Exhibition & Catalog</title>
   
+  <!-- Importamos Three.js para el motor 3D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Importamos el traductor para leer archivos .obj -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 
   <style>
@@ -136,10 +141,14 @@
   </style>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TFLKS522"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
   <div class="gallery-container">
     
+    <!-- ESPACIO 3D INTERACTIVO -->
     <div class="artwork-frame">
       <div id="canvas-container"></div>
     </div>
@@ -151,29 +160,47 @@
     </header>
 
     <main class="catalog-list">
-      <a href="https://s0lid142.bandcamp.com/music" target="_blank" rel="noopener" class="catalog-item">
-        <div class="item-info"><span class="index">[01]</span><span class="title">Bandcamp Discography</span></div><span class="arrow">↗</span>
-      </a>
-
-      <a href="synth.html" class="catalog-item synth-highlight">
-        <div class="item-info"><span class="index">[02]</span><span class="title">Interactive Web Synth</span></div><span class="arrow">→</span>
-      </a>
       
-      <a href="lab.html" class="catalog-item synth-highlight">
-        <div class="item-info"><span class="index">[03]</span><span class="title">R&D Lab / Tech Portfolio</span></div><span class="arrow">→</span>
+      <!-- 01 Interactive web synth -->
+      <a href="synth.html" class="catalog-item synth-highlight">
+        <div class="item-info"><span class="index">[01]</span><span class="title">Interactive Web Synth</span></div><span class="arrow">→</span>
       </a>
 
+      <!-- 02 WEB MPC -->
       <a href="beats.html" class="catalog-item synth-highlight">
-        <div class="item-info"><span class="index">[04]</span><span class="title">WebMPC (Drum Machine)</span></div><span class="arrow">→</span>
+        <div class="item-info"><span class="index">[02]</span><span class="title">WebMPC (Drum Machine)</span></div><span class="arrow">→</span>
       </a>
 
+      <!-- 03 BANDCAMP -->
+      <a href="https://s0lid142.bandcamp.com/music" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info"><span class="index">[03]</span><span class="title">Bandcamp Discography</span></div><span class="arrow">↗</span>
+      </a>
+
+      <!-- 04 Portafolio -->
+      <a href="lab.html" class="catalog-item synth-highlight">
+        <div class="item-info"><span class="index">[04]</span><span class="title">R&D Lab / Tech Portfolio</span></div><span class="arrow">→</span>
+      </a>
+
+      <!-- 05 IG -->
       <a href="https://www.instagram.com/ttt.discos/" target="_blank" rel="noopener" class="catalog-item">
         <div class="item-info"><span class="index">[05]</span><span class="title">Instagram — @ttt.discos</span></div><span class="arrow">↗</span>
       </a>
 
+      <!-- 06 TIK TOK -->
       <a href="https://www.tiktok.com/@elpablones" target="_blank" rel="noopener" class="catalog-item">
         <div class="item-info"><span class="index">[06]</span><span class="title">TikTok — @elpablones</span></div><span class="arrow">↗</span>
       </a>
+
+      <!-- 07 X -->
+      <a href="https://x.com/ElPablones" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info"><span class="index">[07]</span><span class="title">X (Twitter) — @ElPablones</span></div><span class="arrow">↗</span>
+      </a>
+
+      <!-- 08 HYPERFOLLOW -->
+      <a href="https://hyperfollow.com/s0lid142" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info"><span class="index">[08]</span><span class="title">Hyperfollow</span></div><span class="arrow">↗</span>
+      </a>
+
     </main>
 
     <footer>
@@ -181,6 +208,7 @@
     </footer>
   </div>
 
+  <!-- LÓGICA DEL MOTOR 3D Y OBJLOADER -->
   <script>
     const container = document.getElementById('canvas-container');
     
@@ -192,10 +220,9 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // 2. Cargar tu archivo .obj
+    // 2. Cargar tu archivo SpeakerStudio.obj
     let solidObj; 
     
-    // Material de neón verde tipo wireframe
     const material = new THREE.MeshBasicMaterial({ 
       color: 0x53FA00, 
       wireframe: true,
@@ -208,24 +235,31 @@
     loader.load('SpeakerStudio.obj', function (object) {
       solidObj = object;
       
-      // Aplicamos tu material verde a todo el modelo
       solidObj.traverse(function (child) {
         if (child.isMesh) {
           child.material = material;
         }
       });
       
-      // Si el modelo se ve muy grande o muy pequeño, quítale las 
-      // dos barras (//) a la línea de abajo y juega con los números:
-      // solidObj.scale.set(0.5, 0.5, 0.5); 
+      // Magia para centrar el objeto sin importar su pivote original
+      const box = new THREE.Box3().setFromObject(solidObj);
+      const center = box.getCenter(new THREE.Vector3());
+      solidObj.position.x += (solidObj.position.x - center.x);
+      solidObj.position.y += (solidObj.position.y - center.y);
+      solidObj.position.z += (solidObj.position.z - center.z);
       
-      // Centramos la posición
-      solidObj.position.set(0, 0, 0);
+      // Inclinación inicial para corregir el ángulo "desde abajo"
+      solidObj.rotation.x = 0.2;
+
+      // Si se ve enorme, descomenta esta línea y cambia el 0.5:
+      // solidObj.scale.set(0.5, 0.5, 0.5); 
       
       scene.add(solidObj);
     });
 
-    camera.position.z = 3;
+    // Subimos un poquito la cámara para mirar hacia abajo al centro
+    camera.position.set(0, 0.2, 3);
+    camera.lookAt(0, 0, 0);
 
     // 3. Capturar el movimiento del ratón
     let targetRotationX = 0;
@@ -244,9 +278,8 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Solo rotamos si el archivo .obj ya terminó de cargar
       if (solidObj) {
-        // Rotación base
+        // Rotación base automática
         solidObj.rotation.x += 0.002;
         solidObj.rotation.y += 0.003;
 
