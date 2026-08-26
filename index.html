@@ -1,118 +1,288 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-TFLKS522');</script>
-  <!-- End Google Tag Manager -->
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>s0lid142 - Beats & Producción</title>
-  
+  <title>s0lid142 — Exhibition & Catalog</title>
+
   <style>
     :root {
-      --bg: #0e0e11;
-      --card-bg: #1a1a22;
-      --card-hover: #262633;
-      --text: #f0f0f5;
-      --subtext: #8c8c9e;
+      --bg-black: #0F110E;
+      --surface-dark: #151814;
+      --text-main: #DDE1DB;
+      --text-muted: #B6BFB1;
+      --brand-blue: #4279CD;
+      --brand-green: #408C48;
+      --accent-neon: #53FA00;
+      --border-subtle: rgba(182, 191, 177, 0.18);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    
-    body { 
-      background-color: var(--bg); 
-      color: var(--text); 
-      display: flex; 
-      justify-content: center; 
-      min-height: 100vh; 
-      padding: 40px 20px; 
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    .container { 
-      width: 100%; 
-      max-width: 480px; 
-      text-align: center; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
+    body {
+      background-color: var(--bg-black);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
-    
-    p.bio { 
-      color: var(--subtext); 
-      font-size: 0.95rem; 
-      margin-bottom: 28px; 
+    .gallery-container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    .links-list { 
-      width: 100%; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 14px; 
+    /* Galería / Marco de Imagen */
+    .artwork-frame {
+      width: 100%;
+      height: 280px;
+      background-color: var(--surface-dark);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: border-color 0.3s ease;
     }
 
-    .link-card { 
-      display: block; 
-      width: 100%; 
-      background: var(--card-bg); 
-      color: var(--text); 
-      text-decoration: none; 
-      padding: 16px 20px; 
-      border-radius: 12px; 
-      font-weight: 600; 
-      font-size: 0.95rem; 
-      transition: all 0.2s ease; 
-      border: 1px solid rgba(255, 255, 255, 0.05); 
+    .artwork-frame:hover {
+      border-color: var(--accent-neon);
     }
 
-    .link-card:hover { 
-      background: var(--card-hover); 
-      transform: translateY(-2px); 
-      border-color: rgba(255, 255, 255, 0.15); 
+    .artwork-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(15%) contrast(105%);
+      transition: transform 0.5s ease;
     }
 
-    footer { 
-      margin-top: 36px; 
-      font-size: 0.8rem; 
-      color: var(--subtext); 
+    .artwork-frame:hover img {
+      transform: scale(1.02);
+    }
+
+    /* Placeholder mientras subes la foto */
+    .image-placeholder {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 20px;
+      border: 1px dashed var(--border-subtle);
+    }
+
+    /* Cabecera Editorial */
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+      width: 100%;
+    }
+
+    .catalog-tag {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent-neon);
+      margin-bottom: 8px;
+      display: block;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    p.sub-title {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      letter-spacing: 1px;
+      font-weight: 400;
+    }
+
+    /* Enlaces / Catálogo */
+    .catalog-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .catalog-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-dark);
+      color: var(--text-main);
+      text-decoration: none;
+      padding: 18px 22px;
+      border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .catalog-item .item-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .catalog-item .index {
+      font-size: 0.75rem;
+      color: var(--brand-green);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .catalog-item .title {
+      font-size: 0.95rem;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+
+    .catalog-item .arrow {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      transition: transform 0.25s ease, color 0.25s ease;
+    }
+
+    /* Hover State Estilo Galería */
+    .catalog-item:hover {
+      background: #1c211a;
+      border-color: var(--accent-neon);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(83, 250, 0, 0.08);
+    }
+
+    .catalog-item:hover .arrow {
+      color: var(--accent-neon);
+      transform: translateX(4px);
+    }
+
+    .catalog-item:hover .index {
+      color: var(--accent-neon);
+    }
+
+    /* Botón destacado del Sintetizador */
+    .catalog-item.synth-highlight {
+      border-color: rgba(66, 121, 205, 0.4);
+    }
+
+    .catalog-item.synth-highlight .index {
+      color: var(--brand-blue);
+    }
+
+    .catalog-item.synth-highlight:hover {
+      border-color: var(--accent-neon);
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 48px;
+      text-align: center;
+      border-top: 1px solid var(--border-subtle);
+      width: 100%;
+      padding-top: 20px;
+    }
+
+    footer p {
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      text-transform: uppercase;
     }
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TFLKS522"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
-
-  <div class="container">
+  <div class="gallery-container">
     
-    <h1>s0lid142</h1>
-    <p class="bio">Tres Tristes Tigres | Lo-Fi, Boom Bap & Trap</p>
-
-    <div class="links-list">
-      <a href="https://tuartista.bandcamp.com" target="_blank" rel="noopener" class="link-card">
-        🛒 Bandcamp (Beats & Instrumentales)
-      </a>
-      <a href="https://open.spotify.com" target="_blank" rel="noopener" class="link-card">
-        🎧 Escuchar en Spotify
-      </a>
-      <a href="https://instagram.com" target="_blank" rel="noopener" class="link-card">
-        📱 Instagram
-      </a>
-      <a href="mailto:tuemail@dominio.com" class="link-card">
-        ✉️ Contacto
-      </a>
+    <div class="artwork-frame">
+      <div class="image-placeholder">
+        [ Espacio para Obra / Artwork / Cover ]
+      </div>
     </div>
 
+    <header>
+      <span class="catalog-tag">Tres Tristes Tigres</span>
+      <h1>s0lid142</h1>
+      <p class="sub-title">MUSIC & SOUND ARCHIVE</p>
+    </header>
+
+    <main class="catalog-list">
+      
+      <a href="https://s0lid142.bandcamp.com/music" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info">
+          <span class="index">[01]</span>
+          <span class="title">Bandcamp Discography</span>
+        </div>
+        <span class="arrow">↗</span>
+      </a>
+
+      <a href="synth.html" class="catalog-item synth-highlight">
+        <div class="item-info">
+          <span class="index">[02]</span>
+          <span class="title">Interactive Web Synth</span>
+        </div>
+        <span class="arrow">→</span>
+      </a>
+
+      <a href="https://www.instagram.com/ttt.discos/" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info">
+          <span class="index">[03]</span>
+          <span class="title">Instagram — @ttt.discos</span>
+        </div>
+        <span class="arrow">↗</span>
+      </a>
+
+      <a href="https://www.tiktok.com/@elpablones" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info">
+          <span class="index">[04]</span>
+          <span class="title">TikTok — @elpablones</span>
+        </div>
+        <span class="arrow">↗</span>
+      </a>
+
+      <a href="https://x.com/ElPablones" target="_blank" rel="noopener" class="catalog-item">
+        <div class="item-info">
+          <span class="index">[05]</span>
+          <span class="title">X (Twitter) — @ElPablones</span>
+        </div>
+        <span class="arrow">↗</span>
+      </a>
+
+    </main>
+
     <footer>
-      <p>© 2026 s0lid142</p>
+      <p>© 2026 s0lid142 • TTT Discos</p>
     </footer>
+
   </div>
 </body>
 </html>
