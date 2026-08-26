@@ -314,34 +314,51 @@
       localStorage.setItem('s0lid142_midi_map', JSON.stringify(currentMap));
     }
 
-    // --- 3. MOTOR WebMIDI ---
+// --- 3. MOTOR WebMIDI ---
     if (navigator.requestMIDIAccess) {
       navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
     }
 
-    function onMIDISuccess(midiAccess) {
-      const led = document.getElementById('midi-led');
-      const text = document.getElementById('midi-text');
+    // Nueva función inteligente que cuenta los dispositivos reales
+    function updateMidiStatus(midiAccess) {
+      let hasActiveDevice = false;
       
-      if(midiAccess.inputs.size > 0) {
-        led.classList.add('active');
-        text.innerText = "MIDI ON";
+      // Revisamos todos los puertos disponibles
+      for (let input of midiAccess.inputs.values()) {
+        if (input.state === "connected") {
+          hasActiveDevice = true;
+          // Esto asegura que si lo conectas DESPUÉS de abrir la página, funcione
+          input.onmidimessage = getMIDIMessage; 
+        }
       }
 
-      for (var input of midiAccess.inputs.values()) {
-        input.onmidimessage = getMIDIMessage;
+      const led = document.getElementById('midi-led');
+      const text = document.getElementById('midi-text');
+      const debug = document.getElementById('midi-debug');
+
+      if (hasActiveDevice) {
+        led.classList.add('active');
+        text.innerText = "MIDI ON";
+        if (debug.innerText === "Desconectado.") debug.innerText = "Listo.";
+      } else {
+        led.classList.remove('active');
+        text.innerText = "MIDI OFF";
+        debug.innerText = "Desconectado.";
       }
+    }
+
+    function onMIDISuccess(midiAccess) {
+      // 1. Chequeo inicial al cargar la página
+      updateMidiStatus(midiAccess);
       
-      midiAccess.onstatechange = (e) => {
-        if (e.port.type === "input") {
-          led.classList.toggle('active', e.port.state === "connected");
-          text.innerText = e.port.state === "connected" ? "MIDI ON" : "MIDI OFF";
-        }
+      // 2. Escucha activa: Se dispara si conectas o desconectas el cable USB
+      midiAccess.onstatechange = () => {
+        updateMidiStatus(midiAccess);
       };
     }
 
     function onMIDIFailure() {
-      document.getElementById('midi-debug').innerText = "Error acceso MIDI.";
+      document.getElementById('midi-debug').innerText = "Error de acceso MIDI.";
     }
 
     function getMIDIMessage(message) {
