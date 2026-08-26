@@ -110,6 +110,11 @@
     #midi-debug {
       font-size: 0.7rem;
       color: var(--brand-blue);
+      text-align: right;
+      max-width: 60%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Grid de Pads (4x2) */
@@ -200,7 +205,6 @@
     </header>
 
     <div class="pad-grid" id="pads-container">
-      <!-- Los data-midi iniciales (se sobreescribirán si hay datos guardados) -->
       <div class="pad" data-midi="36" data-sound="kick" id="pad-kick">
         <span class="midi-hint">[36]</span>Kick
       </div>
@@ -259,7 +263,6 @@
     let learnMode = false;
     let padToBind = null;
 
-    // Cargar mapeo guardado previamente
     function loadSavedMidiMap() {
       const savedMap = JSON.parse(localStorage.getItem('s0lid142_midi_map'));
       if (savedMap) {
@@ -274,7 +277,6 @@
     }
     loadSavedMidiMap();
 
-    // Botón para activar/desactivar el modo de aprendizaje
     const learnBtn = document.getElementById('learn-btn');
     learnBtn.addEventListener('click', () => {
       learnMode = !learnMode;
@@ -289,13 +291,10 @@
       }
     });
 
-    // Clics en los pads (Con ratón o para seleccionarlos en modo mapeo)
     document.querySelectorAll('.pad').forEach(pad => {
       pad.addEventListener('mousedown', () => {
         if (learnMode) {
-          // Deseleccionar cualquier otro pad
           document.querySelectorAll('.pad').forEach(p => p.classList.remove('binding'));
-          // Seleccionar este
           padToBind = pad;
           pad.classList.add('binding');
           learnBtn.innerText = "Toca tu controlador 🎹";
@@ -305,7 +304,6 @@
       });
     });
 
-    // Guardar el mapa actual en la memoria del navegador
     function saveMidiMap() {
       const currentMap = {};
       document.querySelectorAll('.pad').forEach(pad => {
@@ -314,20 +312,18 @@
       localStorage.setItem('s0lid142_midi_map', JSON.stringify(currentMap));
     }
 
-// --- 3. MOTOR WebMIDI ---
+    // --- 3. MOTOR WebMIDI MEJORADO ---
     if (navigator.requestMIDIAccess) {
       navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
     }
 
-    // Nueva función inteligente que cuenta los dispositivos reales
     function updateMidiStatus(midiAccess) {
-      let hasActiveDevice = false;
+      let activeDevices = [];
       
-      // Revisamos todos los puertos disponibles
+      // Recolectar nombres de dispositivos realmente conectados
       for (let input of midiAccess.inputs.values()) {
         if (input.state === "connected") {
-          hasActiveDevice = true;
-          // Esto asegura que si lo conectas DESPUÉS de abrir la página, funcione
+          activeDevices.push(input.name);
           input.onmidimessage = getMIDIMessage; 
         }
       }
@@ -336,10 +332,14 @@
       const text = document.getElementById('midi-text');
       const debug = document.getElementById('midi-debug');
 
-      if (hasActiveDevice) {
+      if (activeDevices.length > 0) {
         led.classList.add('active');
         text.innerText = "MIDI ON";
-        if (debug.innerText === "Desconectado.") debug.innerText = "Listo.";
+        
+        // Mostrar qué dispositivo específico se reconoció
+        if (!debug.innerText.includes("Cmd:")) {
+          debug.innerText = `🔌 ${activeDevices[0]}`;
+        }
       } else {
         led.classList.remove('active');
         text.innerText = "MIDI OFF";
@@ -348,17 +348,21 @@
     }
 
     function onMIDISuccess(midiAccess) {
-      // 1. Chequeo inicial al cargar la página
       updateMidiStatus(midiAccess);
       
-      // 2. Escucha activa: Se dispara si conectas o desconectas el cable USB
-      midiAccess.onstatechange = () => {
+      // Manejar explícitamente eventos de conexión y desconexión
+      midiAccess.onstatechange = (e) => {
         updateMidiStatus(midiAccess);
+        
+        // Mensaje extra si el cable se desconecta
+        if (e.port.state === "disconnected" && e.port.type === "input") {
+           document.getElementById('midi-debug').innerText = "❌ Desconectado";
+        }
       };
     }
 
     function onMIDIFailure() {
-      document.getElementById('midi-debug').innerText = "Error de acceso MIDI.";
+      document.getElementById('midi-debug').innerText = "Error acceso MIDI.";
     }
 
     function getMIDIMessage(message) {
@@ -366,26 +370,20 @@
       const note = message.data[1];
       const velocity = (message.data.length > 2) ? message.data[2] : 0;
 
-      // Monitor MIDI en pantalla
+      // Monitor constante en pantalla
       document.getElementById('midi-debug').innerText = `Cmd: ${command} | Nota: ${note}`;
 
-      // Aceptar Note On en CUALQUIER canal (comandos 144 al 159)
       const isNoteOn = (command >= 144 && command <= 159);
 
       if (isNoteOn && velocity > 0) {
-        
-        // ESTAMOS EN MODO MAPEO
         if (learnMode && padToBind) {
           padToBind.setAttribute('data-midi', note);
           padToBind.querySelector('.midi-hint').innerText = `[${note}]`;
           padToBind.classList.remove('binding');
           padToBind = null;
-          learnBtn.innerText = "Asignado ✅ Selecciona otro pad";
-          saveMidiMap(); // Guardar en memoria local
-        } 
-        
-        // ESTAMOS TOCANDO NORMALMENTE
-        else {
+          learnBtn.innerText = "Asignado ✅ Selecciona otro";
+          saveMidiMap();
+        } else {
           const padToTrigger = document.querySelector(`.pad[data-midi="${note}"]`);
           if (padToTrigger) {
             playSound(padToTrigger);
