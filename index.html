@@ -1,20 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-TFLKS522');</script>
-  <!-- End Google Tag Manager -->
-
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>s0lid142 — Exhibition & Catalog</title>
   
-  <!-- Importamos Three.js para el motor 3D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
 
   <style>
     :root {
@@ -139,14 +136,10 @@
   </style>
 </head>
 <body>
-  <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TFLKS522"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-  <!-- End Google Tag Manager (noscript) -->
-
   <div class="gallery-container">
     
-    <!-- ESPACIO 3D INTERACTIVO -->
     <div class="artwork-frame">
       <div id="canvas-container"></div>
     </div>
@@ -188,31 +181,49 @@
     </footer>
   </div>
 
-  <!-- LÓGICA DEL MOTOR 3D -->
   <script>
     const container = document.getElementById('canvas-container');
     
     // 1. Configurar Escena, Cámara y Motor de Render
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); // alpha: true deja el fondo transparente
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // 2. Crear la Geometría (Un Sólido: Icosaedro)
-    const geometry = new THREE.IcosahedronGeometry(1.4, 1); 
+    // 2. Cargar tu archivo .obj
+    let solidObj; 
     
-    // Material tipo Wireframe usando tu color neón
+    // Material de neón verde tipo wireframe
     const material = new THREE.MeshBasicMaterial({ 
       color: 0x53FA00, 
       wireframe: true,
       transparent: true,
       opacity: 0.6
     });
+
+    const loader = new THREE.OBJLoader();
     
-    const solidObj = new THREE.Mesh(geometry, material);
-    scene.add(solidObj);
+    loader.load('solidObj.obj', function (object) {
+      solidObj = object;
+      
+      // Aplicamos tu material verde a todo el modelo
+      solidObj.traverse(function (child) {
+        if (child.isMesh) {
+          child.material = material;
+        }
+      });
+      
+      // Si el modelo se ve muy grande o muy pequeño, quítale las 
+      // dos barras (//) a la línea de abajo y juega con los números:
+      // solidObj.scale.set(0.5, 0.5, 0.5); 
+      
+      // Centramos la posición
+      solidObj.position.set(0, 0, 0);
+      
+      scene.add(solidObj);
+    });
 
     camera.position.z = 3;
 
@@ -233,21 +244,24 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      // Rotación base automática
-      solidObj.rotation.x += 0.002;
-      solidObj.rotation.y += 0.003;
+      // Solo rotamos si el archivo .obj ya terminó de cargar
+      if (solidObj) {
+        // Rotación base
+        solidObj.rotation.x += 0.002;
+        solidObj.rotation.y += 0.003;
 
-      // Inercia y reacción al ratón
-      targetRotationY = mouseX * 2;
-      targetRotationX = mouseY * 2;
-      
-      solidObj.rotation.y += 0.05 * (targetRotationY - solidObj.rotation.y);
-      solidObj.rotation.x += 0.05 * (targetRotationX - solidObj.rotation.x);
+        // Inercia y reacción al ratón
+        targetRotationY = mouseX * 2;
+        targetRotationX = mouseY * 2;
+        
+        solidObj.rotation.y += 0.05 * (targetRotationY - solidObj.rotation.y);
+        solidObj.rotation.x += 0.05 * (targetRotationX - solidObj.rotation.x);
+      }
 
       renderer.render(scene, camera);
     }
 
-    // 5. Ajustar el tamaño si se cambia la pantalla
+    // 5. Ajustar si cambia el tamaño de la pantalla
     window.addEventListener('resize', () => {
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
