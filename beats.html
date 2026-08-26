@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>s0lid142 — Drum Machine & MIDI</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    :root {
+      --bg-black: #0F110E;
+      --surface-dark: #151814;
+      --text-main: #DDE1DB;
+      --text-muted: #B6BFB1;
+      --brand-blue: #4279CD;
+      --brand-green: #408C48;
+      --accent-neon: #53FA00;
+      --border-subtle: rgba(182, 191, 177, 0.18);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-black);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .machine-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface-dark);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 16px;
+    }
+
+    .title-area h2 { font-weight: 400; letter-spacing: -0.5px; }
+    
+    .midi-status {
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .midi-led {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: red; /* Cambiará a verde si detecta MIDI */
+      box-shadow: 0 0 5px red;
+    }
+
+    .midi-led.active {
+      background-color: var(--accent-neon);
+      box-shadow: 0 0 8px var(--accent-neon);
+    }
+
+    /* Grid de Pads (4x2) */
+    .pad-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .pad {
+      aspect-ratio: 1 / 1;
+      background: #1c211a;
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      transition: all 0.05s ease;
+      user-select: none;
+    }
+
+    .pad:active, .pad.triggered {
+      background: var(--brand-blue);
+      border-color: var(--accent-neon);
+      color: white;
+      transform: scale(0.96);
+      box-shadow: 0 0 15px rgba(66, 121, 205, 0.5);
+    }
+
+    .back-btn {
+      display: inline-block;
+      margin-top: 30px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: color 0.2s;
+    }
+
+    .back-btn:hover { color: var(--accent-neon); }
+  </style>
+</head>
+<body>
+
+  <div class="machine-container">
+    <header>
+      <div class="title-area">
+        <h2>WebMPC // MIDI</h2>
+      </div>
+      <div class="midi-status">
+        <div class="midi-led" id="midi-led"></div>
+        <span id="midi-text">MIDI OFF</span>
+      </div>
+    </header>
+
+    <div class="pad-grid">
+      <!-- Mapeados al estándar MIDI de baterías (36=Kick, 38=Snare, etc.) -->
+      <div class="pad" data-midi="36" data-sound="kick">Kick (C1)</div>
+      <div class="pad" data-midi="38" data-sound="snare">Snare (D1)</div>
+      <div class="pad" data-midi="42" data-sound="hihatC">Hat C. (F#1)</div>
+      <div class="pad" data-midi="46" data-sound="hihatO">Hat O. (A#1)</div>
+      <div class="pad" data-midi="45" data-sound="tomL">Tom L (A1)</div>
+      <div class="pad" data-midi="50" data-sound="tomH">Tom H (D2)</div>
+      <div class="pad" data-midi="39" data-sound="clap">Clap (D#1)</div>
+      <div class="pad" data-midi="49" data-sound="crash">Crash (C#2)</div>
+    </div>
+  </div>
+  
+  <a href="index.html" class="back-btn">← Volver al catálogo</a>
+
+  <script>
+    // --- 1. MOTOR DE AUDIO (Tone.js) ---
+    // Nota para el futuro: Si quieres usar tus propios samples wav, 
+    // cambias esto por: const kick = new Tone.Player("ruta/kick.wav").toDestination();
+    const synths = {
+      kick: new Tone.MembraneSynth().toDestination(),
+      snare: new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0 } }).toDestination(),
+      hihatC: new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 0.1, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination(),
+      hihatO: new Tone.MetalSynth({ frequency: 200, envelope: { attack: 0.001, decay: 0.4, release: 0.01 }, harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5 }).toDestination(),
+      tomL: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 2, envelope: { attack: 0.01, decay: 0.4, sustain: 0 } }).toDestination(),
+      tomH: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4, envelope: { attack: 0.01, decay: 0.4, sustain: 0 } }).toDestination(),
+      clap: new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0 } }).toDestination(),
+      crash: new Tone.MetalSynth({ frequency: 300, envelope: { attack: 0.001, decay: 1.5, release: 0.2 }, harmonicity: 4, modulationIndex: 40, resonance: 2000 }).toDestination()
+    };
+
+    // Función para disparar el sonido y la animación visual
+    async function playSound(padElement) {
+      await Tone.start();
+      const soundType = padElement.getAttribute('data-sound');
+      
+      // Reproducir sonido
+      if (soundType === 'kick' || soundType === 'tomL' || soundType === 'tomH') {
+        synths[soundType].triggerAttackRelease(soundType === 'kick' ? "C1" : soundType === 'tomL' ? "G1" : "C2", "8n");
+      } else {
+        synths[soundType].triggerAttackRelease("16n");
+      }
+
+      // Animación del pad
+      padElement.classList.add('triggered');
+      setTimeout(() => padElement.classList.remove('triggered'), 100);
+    }
+
+    // Eventos de clic con el ratón
+    document.querySelectorAll('.pad').forEach(pad => {
+      pad.addEventListener('mousedown', () => playSound(pad));
+    });
+
+    // --- 2. MOTOR WebMIDI ---
+    if (navigator.requestMIDIAccess) {
+      navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+    }
+
+    function onMIDISuccess(midiAccess) {
+      const led = document.getElementById('midi-led');
+      const text = document.getElementById('midi-text');
+      
+      // Si encuentra dispositivos MIDI
+      if(midiAccess.inputs.size > 0) {
+        led.classList.add('active');
+        text.innerText = "MIDI ON";
+      }
+
+      for (var input of midiAccess.inputs.values()) {
+        input.onmidimessage = getMIDIMessage;
+      }
+      
+      // Escuchar cuando se conecta o desconecta hardware
+      midiAccess.onstatechange = (e) => {
+        if (e.port.type === "input") {
+          led.classList.toggle('active', e.port.state === "connected");
+          text.innerText = e.port.state === "connected" ? "MIDI ON" : "MIDI OFF";
+        }
+      };
+    }
+
+    function onMIDIFailure() {
+      console.log('No se pudo acceder a los dispositivos MIDI.');
+    }
+
+    function getMIDIMessage(message) {
+      const command = message.data[0];
+      const note = message.data[1];
+      const velocity = (message.data.length > 2) ? message.data[2] : 0; // Volumen (no usado aquí, pero útil)
+
+      // command 144 es Note On. Si velocity > 0, tocamos la nota.
+      if (command === 144 && velocity > 0) {
+        // Buscamos el pad que tenga este número MIDI asignado
+        const padToTrigger = document.querySelector(`.pad[data-midi="${note}"]`);
+        if (padToTrigger) {
+          playSound(padToTrigger);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
