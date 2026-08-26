@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Video Sampler</title>
+    <style>
+        body { background: #0F110E; color: #DDE1DB; font-family: sans-serif; text-align: center; padding: 40px; }
+        video { width: 100%; max-width: 600px; border: 1px solid rgba(182,191,177,0.2); margin-bottom: 20px; }
+        .pad { background: #151814; border: 1px solid #53FA00; color: #53FA00; padding: 20px; font-size: 1.2rem; cursor: pointer; margin: 10px; display: inline-block; }
+    </style>
+</head>
+<body>
+
+    <h1>Video to Sampler</h1>
+    
+    <input type="file" id="videoUploader" accept="video/*">
+    <br><br>
+    
+    <video id="mediaVideo" controls></video>
+    <br>
+    
+    <div class="pad" id="cuePad">DISPARAR / LOOP</div>
+
+    <script>
+        const uploader = document.getElementById('videoUploader');
+        const videoElement = document.getElementById('mediaVideo');
+        const cuePad = document.getElementById('cuePad');
+
+        let audioCtx;
+        let sourceNode;
+
+        // 1. Cargar el video seleccionado por el usuario
+        uploader.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const fileURL = URL.createObjectURL(file);
+                videoElement.src = fileURL;
+            }
+        });
+
+        // 2. Inicializar Web Audio API al interactuar por primera vez
+        videoElement.addEventListener('play', () => {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                sourceNode = audioCtx.createMediaElementSource(videoElement);
+                sourceNode.connect(audioCtx.destination); // Conecta el audio a tus cornetas/salida
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }, { once: true });
+
+        // 3. Ejemplo de función de sampleo (regresar al segundo 0 o trocear)
+        cuePad.addEventListener('click', () => {
+            videoElement.currentTime = 0; // Vuelve al inicio del video (efecto scratch/retrigger)
+            videoElement.play();
+        });
+    </script>
+
+</body>
+</html>
