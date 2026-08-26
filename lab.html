@@ -95,7 +95,6 @@
       width: 90px;
       height: 90px;
       background: #232722;
-      border: 1px dashed var(--border-subtle);
       border-radius: 6px;
       flex-shrink: 0;
       display: flex;
@@ -105,6 +104,7 @@
       font-size: 0.7rem;
       text-align: center;
       overflow: hidden;
+      border: 1px solid var(--border-subtle);
     }
 
     .project-cover img {
@@ -166,6 +166,8 @@
       text-transform: uppercase;
       letter-spacing: 2px;
     }
+
+    /* Estilos específicos para Coming Soon */
     .project-card.coming-soon-card {
       border-style: dashed;
       opacity: 0.8;
@@ -177,7 +179,7 @@
       background: var(--surface-dark);
     }
     .project-tech.coming {
-      color: #e58e26; /* Color distintivo para el aviso */
+      color: #e58e26;
     }
   </style>
 </head>
@@ -194,7 +196,6 @@
       <!-- Próximo Lanzamiento (Coming Soon) -->
       <div class="project-card coming-soon-card">
         <div class="project-content-wrapper">
-          <!-- Espacio para el cover -->
           <div class="project-cover">
             <span>Cover Art</span>
           </div>
@@ -211,12 +212,12 @@
           </div>
         </div>
       </div>
-      <!-- Canción 1 -->
+
+      <!-- Canción 1: Totes por el Euska -->
       <a href="https://distrokid.com/hyperfollow/s0lid142/totes-por-el-euska?ref=release" target="_blank" class="project-card">
         <div class="project-content-wrapper">
-          <!-- Espacio para el cover: reemplaza el texto o añade <img src="tu-imagen.jpg"> -->
           <div class="project-cover">
-            <span>Cover Art</span>
+            <img src="TotesPorElEuskaCover.jpg" alt="Totes por el Euska Cover">
           </div>
           <div class="project-info">
             <div class="project-header">
@@ -232,12 +233,11 @@
         </div>
       </a>
 
-      <!-- Canción 2 -->
+      <!-- Canción 2: Ceros en Celo -->
       <a href="https://distrokid.com/hyperfollow/s0lid142/ceros-en-celo?ref=release" target="_blank" class="project-card">
         <div class="project-content-wrapper">
-          <!-- Espacio para el cover -->
           <div class="project-cover">
-            <span>Cover Art</span>
+            <img src="CerosEnCeloCover.jpg" alt="Ceros en Celo Cover">
           </div>
           <div class="project-info">
             <div class="project-header">
