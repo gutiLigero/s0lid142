@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>s0lid142 — R&D Lab</title>
+  <style>
+    :root {
+      --bg-black: #0F110E;
+      --surface-dark: #151814;
+      --text-main: #DDE1DB;
+      --text-muted: #B6BFB1;
+      --brand-blue: #4279CD;
+      --brand-green: #408C48;
+      --accent-neon: #53FA00;
+      --border-subtle: rgba(182, 191, 177, 0.18);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-black);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    header {
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 20px;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: color 0.2s;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    .nav-link:hover { color: var(--accent-neon); }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 300;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+
+    p.bio {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    /* Tarjetas de Proyectos */
+    .project-card {
+      background: var(--surface-dark);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 24px;
+      margin-bottom: 20px;
+      transition: border-color 0.3s;
+    }
+
+    .project-card:hover {
+      border-color: var(--brand-blue);
+    }
+
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .project-title {
+      font-size: 1.2rem;
+      color: var(--text-main);
+      font-weight: 500;
+    }
+
+    .project-tech {
+      font-size: 0.7rem;
+      color: var(--brand-blue);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .project-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      background: rgba(182, 191, 177, 0.1);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+
+    footer {
+      margin-top: 50px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <a href="index.html" class="nav-link">← Volver a la Galería</a>
+      <h1>Research & Development</h1>
+      <p class="bio">Archivo de proyectos de diseño interactivo, prototipado de hardware y desarrollo de audio espacial.</p>
+    </header>
+
+    <main>
+      <article class="project-card">
+        <div class="project-header">
+          <h2 class="project-title">VR Drum Kit & MIDI Routing</h2>
+          <span class="project-tech">Unity 6 / C#</span>
+        </div>
+        <p class="project-desc">Desarrollo de un set de batería virtual utilizando Meta Quest 3 y el XR Interaction Toolkit. El sistema transmite señales MIDI en tiempo real desde el entorno de realidad virtual directamente hacia DAWs como Ableton Live para síntesis y diseño sonoro.</p>
+        <div class="tags">
+          <span class="tag">VR / AR</span>
+          <span class="tag">Spatial Audio</span>
+          <span class="tag">MIDI API</span>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <div class="project-header">
+          <h2 class="project-title">Hardware Modding: M593</h2>
+          <span class="project-tech">Prototipado / CAD</span>
+        </div>
+        <p class="project-desc">Modificación de hardware e ingeniería inversa enfocada en módulos de relojería (Casio F-91W). Diseño e impresión 3D de soportes internos personalizados y retrofitting de componentes electrónicos para expandir la funcionalidad original.</p>
+        <div class="tags">
+          <span class="tag">3D Modeling</span>
+          <span class="tag">Microcontrollers</span>
+          <span class="tag">Hardware</span>
+        </div>
+      </article>
+
+      <article class="project-card">
+        <div class="project-header">
+          <h2 class="project-title">IoT & Interactive Systems</h2>
+          <span class="project-tech">Arduino / Sensores</span>
+        </div>
+        <p class="project-desc">Integración de sistemas ciberfísicos utilizando microcontroladores. Programación en C/C++ para el procesamiento de datos de sensores y su traducción a interfaces de usuario interactivas e instalaciones digitales.</p>
+        <div class="tags">
+          <span class="tag">C++</span>
+          <span class="tag">IoT</span>
+          <span class="tag">Interaction Design</span>
+        </div>
+      </article>
+    </main>
+
+    <footer>
+      <p>s0lid142 // Lab</p>
+    </footer>
+  </div>
+
+</body>
+</html>
