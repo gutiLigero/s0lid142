@@ -1,450 +1,1018 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>s0lid142 — Web Audio Sampler & Chopper</title>
-    <style>
-        :root {
-            --bg-black: #0F110E;
-            --surface-dark: #151814;
-            --text-main: #DDE1DB;
-            --text-muted: #B6BFB1;
-            --brand-green: #408C48;
-            --accent-neon: #53FA00;
-            --accent-red: #FA3030;
-            --border-subtle: rgba(182, 191, 177, 0.18);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>s0lid142 — MPC Style Sampler</title>
+<meta name="description" content="Sampler estilo MPC en el navegador: captura o importa audio, trocéalo automáticamente y tócalo en 16 pads con 4 bancos, inspirado en los samplers clásicos del hip hop.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2210%22 fill=%22%23202020%22/><rect x=%2218%22 y=%2218%22 width=%2264%22 height=%2264%22 rx=%226%22 fill=%22%23FFB000%22/></svg>">
+<style>
+:root {
+    --chassis: #2a2a2a;
+    --chassis-dark: #1b1b1b;
+    --chassis-light: #3a3a3a;
+    --panel: #232323;
+    --lcd-bg: #1a1408;
+    --lcd-amber: #ffb000;
+    --lcd-amber-dim: #7a5500;
+    --pad-face: #3d3d3d;
+    --pad-face-light: #4c4c4c;
+    --pad-border: #171717;
+    --text-main: #e7e4dd;
+    --text-muted: #9a978f;
+    --accent-red: #d43b2f;
+    --accent-blue: #3f7fd1;
+    --screw: #111;
+    --focus-ring: #ffb000;
+}
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body {
-            background-color: var(--bg-black);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 30px 15px;
-        }
+@media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
 
-        .container {
-            width: 100%;
-            max-width: 650px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+body {
+    background: radial-gradient(circle at 50% 0%, #262626, #101010 70%);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px 12px 60px;
+}
 
-        header {
-            text-align: center;
-            border-bottom: 1px solid var(--border-subtle);
-            padding-bottom: 15px;
-        }
+.unit {
+    width: 100%;
+    max-width: 760px;
+    background: linear-gradient(180deg, var(--chassis-light) 0%, var(--chassis) 6%, var(--chassis-dark) 100%);
+    border-radius: 14px;
+    padding: 18px 18px 22px;
+    box-shadow:
+        0 30px 60px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid #050505;
+    position: relative;
+}
 
-        header h1 { font-size: 1.5rem; font-weight: 300; letter-spacing: -0.5px; }
-        header p { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 4px; }
+.unit::before, .unit::after {
+    /* tornillos decorativos superiores */
+    content: '';
+    position: absolute;
+    top: 10px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #555, var(--screw));
+    box-shadow: inset 0 0 1px #000;
+}
+.unit::before { left: 12px; }
+.unit::after { right: 12px; }
 
-        .panel {
-            background: var(--surface-dark);
-            border: 1px solid var(--border-subtle);
-            border-radius: 4px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+.unit-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 4px 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 14px;
+}
 
-        .panel-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent-neon);
-            font-weight: 600;
-        }
+.brand-block { display: flex; flex-direction: column; gap: 2px; }
 
-        .controls-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+.brand-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--text-main);
+}
 
-        button {
-            background: var(--surface-dark);
-            color: var(--text-main);
-            border: 1px solid var(--border-subtle);
-            padding: 10px 16px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
+.brand-sub {
+    font-size: 0.62rem;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+}
 
-        button:hover {
-            border-color: var(--accent-neon);
-            color: var(--accent-neon);
-        }
+.brand-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--chassis-dark);
+    background: linear-gradient(180deg, #ffcc55, var(--lcd-amber));
+    padding: 4px 10px;
+    border-radius: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.1;
+}
+.brand-badge span { font-size: 0.55rem; font-weight: 500; }
 
-        button.primary {
-            background: var(--accent-neon);
-            color: var(--bg-black);
-            border: none;
-            font-weight: 600;
-        }
+.deck {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
 
-        button.primary:hover {
-            opacity: 0.85;
-            color: var(--bg-black);
-        }
+@media (max-width: 640px) {
+    .deck { grid-template-columns: 1fr; }
+}
 
-        button.danger {
-            background: rgba(250, 48, 48, 0.15);
-            border-color: var(--accent-red);
-            color: var(--accent-red);
-        }
+.left-col, .right-col {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.4);
+}
 
-        button.danger.recording {
-            animation: pulse 1s infinite;
-        }
+.section-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
+/* LCD */
+.lcd {
+    background: var(--lcd-bg);
+    border: 2px solid #000;
+    border-radius: 4px;
+    padding: 10px 12px;
+    font-family: "Courier New", Courier, monospace;
+    color: var(--lcd-amber);
+    text-shadow: 0 0 4px rgba(255,176,0,0.55);
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.8), inset 0 0 30px rgba(255,176,0,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+}
 
-        /* Canvas de Onda */
-        .waveform-container {
-            width: 100%;
-            height: 140px;
-            background: #000;
-            border: 1px solid var(--border-subtle);
-            border-radius: 4px;
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-        }
+.lcd-title { color: var(--lcd-amber-dim); font-size: 0.7rem; }
+.lcd-row { display: flex; justify-content: space-between; }
 
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
+/* Botones estilo hardware */
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
-        /* Pads Grid */
-        .pads-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
+.mpc-btn {
+    background: linear-gradient(180deg, #4a4a4a, #363636);
+    color: var(--text-main);
+    border: 1px solid #1a1a1a;
+    border-top-color: #5c5c5c;
+    padding: 9px 12px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+}
 
-        .pad {
-            background: var(--bg-black);
-            border: 1px solid var(--border-subtle);
-            border-radius: 4px;
-            height: 75px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.1s ease;
-            user-select: none;
-        }
+.mpc-btn:hover:not(:disabled) {
+    background: linear-gradient(180deg, #565656, #404040);
+    color: var(--lcd-amber);
+}
 
-        .pad .pad-num {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            font-weight: 600;
-        }
+.mpc-btn:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 1px 0 rgba(0,0,0,0.5);
+}
 
-        .pad .pad-info {
-            font-size: 0.7rem;
-            color: var(--accent-neon);
-        }
+.mpc-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-        .pad:hover, .pad.active {
-            border-color: var(--accent-neon);
-            background: #1c211a;
-            box-shadow: 0 0 10px rgba(83, 250, 0, 0.1);
-            transform: translateY(-2px);
-        }
+.mpc-btn.small { padding: 7px 10px; font-size: 0.68rem; }
 
-        .status-text {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-align: center;
-        }
-    </style>
+.mpc-btn.rec { color: #ffdcd8; }
+.mpc-btn.rec.recording {
+    background: linear-gradient(180deg, var(--accent-red), #8f241c);
+    animation: pulse 1s infinite;
+}
+.mpc-btn.stop { color: var(--text-muted); }
+.mpc-btn.warn { border-color: rgba(212,59,47,0.6); color: #ff9086; }
+
+@keyframes pulse { 0%{opacity:1;} 50%{opacity:0.55;} 100%{opacity:1;} }
+
+button:focus-visible, input:focus-visible, .pad:focus-visible, .bank-btn:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.mini-label { font-size: 0.62rem; color: var(--text-muted); letter-spacing: 0.5px; }
+
+.sens-wrap { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+
+input[type="range"] { accent-color: var(--lcd-amber); cursor: pointer; }
+
+/* Waveform */
+.waveform-container {
+    width: 100%;
+    height: 110px;
+    background: #000;
+    border: 2px solid #000;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    cursor: crosshair;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+}
+
+canvas { width: 100%; height: 100%; display: block; }
+
+.wave-hint {
+    position: absolute;
+    bottom: 3px; right: 6px;
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    background: rgba(0,0,0,0.55);
+    padding: 2px 5px;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+/* Bancos */
+.bank-row { display: flex; gap: 6px; }
+
+.bank-btn {
+    flex: 1;
+    background: linear-gradient(180deg, #444, #2f2f2f);
+    color: var(--text-muted);
+    border: 1px solid #151515;
+    border-top-color: #565656;
+    padding: 8px 0;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.5);
+}
+
+.bank-btn.active {
+    background: linear-gradient(180deg, var(--lcd-amber), #b47700);
+    color: #1a1408;
+    border-color: #7a5500;
+}
+
+/* Pads 4x4 */
+.pads-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.pad {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    background: radial-gradient(circle at 35% 30%, var(--pad-face-light), var(--pad-face) 70%);
+    border: 1px solid var(--pad-border);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 6px;
+    cursor: pointer;
+    user-select: none;
+    box-shadow: 0 3px 0 #101010, inset 0 1px 1px rgba(255,255,255,0.08);
+    transition: transform 0.05s ease, box-shadow 0.05s ease, background 0.1s ease;
+}
+
+.pad .pad-top-row { display: flex; justify-content: space-between; align-items: flex-start; }
+
+.pad .pad-num {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.pad .pad-download {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    line-height: 1;
+    padding: 1px 3px;
+    border-radius: 3px;
+}
+.pad .pad-download:hover { color: var(--accent-blue); background: rgba(63,127,209,0.2); }
+
+.pad .pad-info { font-size: 0.6rem; color: var(--lcd-amber); font-weight: 700; }
+.pad .pad-dur { font-size: 0.55rem; color: var(--text-muted); }
+
+.pad.empty { opacity: 0.3; cursor: default; }
+
+.pad:hover:not(.empty) { border-color: rgba(255,176,0,0.4); }
+
+.pad.active, .pad.playing {
+    background: radial-gradient(circle at 35% 30%, #ffb000, #b47700 75%);
+    box-shadow: 0 1px 0 #101010, 0 0 14px rgba(255,176,0,0.55), inset 0 1px 1px rgba(255,255,255,0.2);
+    transform: translateY(2px);
+}
+.pad.active .pad-info, .pad.playing .pad-info,
+.pad.active .pad-num, .pad.playing .pad-num,
+.pad.active .pad-dur, .pad.playing .pad-dur { color: #1a1408; }
+
+@media (max-width: 420px) {
+    .pad { border-radius: 5px; }
+}
+
+/* Master */
+.master-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.master-block { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    letter-spacing: 0.5px;
+}
+
+.status-text {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-top: 4px;
+}
+
+footer {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    padding-top: 14px;
+}
+
+.back-link-row { margin-top: 8px; }
+
+.back-link {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+.back-link:hover, .back-link:focus-visible {
+    color: var(--lcd-amber);
+    border-bottom-color: var(--lcd-amber);
+}
+
+</style>
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>s0lid142 — Desktop Audio Sampler</h1>
-            <p>Captura sistema/pestaña • Auto-Chopper • Pads</p>
-        </header>
+<div class="unit">
 
-        <div class="panel">
-            <span class="panel-title">[01] Captura de Audio</span>
-            <div class="controls-row">
-                <button class="primary" id="btnRecord">Grabar Audio (Sistema / Pestaña)</button>
-                <button class="danger" id="btnStop" disabled>Detener Grabación</button>
-            </div>
-            <div class="status-text" id="statusMsg">Listo para capturar audio de streaming, pestañas o sistema.</div>
+    <div class="unit-top">
+        <div class="brand-block">
+            <span class="brand-name">s0lid142</span>
+            <span class="brand-sub">MIDI PRODUCTION STYLE · 16-PAD SAMPLER</span>
         </div>
-
-        <div class="panel">
-            <span class="panel-title">[02] Waveform & Slices (Haz clic para cortar)</span>
-            <div class="waveform-container">
-                <canvas id="waveCanvas"></canvas>
-            </div>
-            <div class="controls-row" style="justify-content: space-between; align-items: center;">
-                <button id="btnAutoSlice">Auto-Trocear (Detectar Picos)</button>
-                <button id="btnClearSlices" style="border-color: var(--accent-red); color: var(--accent-red);">Limpiar Cortes</button>
-            </div>
-        </div>
-
-        <div class="panel">
-            <span class="panel-title">[03] Performance Pads (Teclas 1-8)</span>
-            <div class="pads-grid" id="padsContainer">
-                </div>
-        </div>
+        <div class="brand-badge">MPC<span>style</span></div>
     </div>
 
-    <script>
-        let audioCtx;
-        let mediaStream;
-        let mediaRecorder;
-        let audioChunks = [];
-        let audioBuffer = null;
-        
-        // Puntos de corte en segundos
-        let slicePoints = [0]; 
+    <div class="deck">
 
-        const btnRecord = document.getElementById('btnRecord');
-        const btnStop = document.getElementById('btnStop');
-        const statusMsg = document.getElementById('statusMsg');
-        const waveCanvas = document.getElementById('waveCanvas');
-        const canvasCtx = waveCanvas.getContext('2d');
-        const btnAutoSlice = document.getElementById('btnAutoSlice');
-        const btnClearSlices = document.getElementById('btnClearSlices');
-        const padsContainer = document.getElementById('padsContainer');
+        <!-- Columna izquierda: LCD + transporte + fuente -->
+        <div class="left-col">
 
-        // Inicializar Grid de 8 Pads
-        function initPads() {
-            padsContainer.innerHTML = '';
-            for (let i = 0; i < 8; i++) {
-                const pad = document.createElement('div');
-                pad.className = 'pad';
-                pad.dataset.index = i;
-                pad.innerHTML = `
-                    <span class="pad-num">[${i+1}]</span>
-                    <span class="pad-info">Slice ${i+1}</span>
-                `;
-                pad.addEventListener('click', () => triggerSlice(i));
-                padsContainer.appendChild(pad);
-            }
+            <div class="lcd" id="lcd" role="status" aria-live="polite">
+                <div class="lcd-line lcd-title">S0LID142 v2</div>
+                <div class="lcd-line" id="lcdStatus">NO HAY AUDIO CARGADO</div>
+                <div class="lcd-row">
+                    <span id="lcdBank">BANK:A</span>
+                    <span id="lcdDur">DUR:--.--s</span>
+                </div>
+                <div class="lcd-row">
+                    <span id="lcdSlices">SLICES:0</span>
+                    <span id="lcdMode">MODE:ONE-SHOT</span>
+                </div>
+            </div>
+
+            <div class="section-label">Fuente</div>
+            <div class="btn-row">
+                <button class="mpc-btn rec" id="btnRecord">● REC SISTEMA/PESTAÑA</button>
+                <button class="mpc-btn stop" id="btnStop" disabled>■ STOP</button>
+            </div>
+            <div class="btn-row">
+                <button class="mpc-btn" id="btnImport">📂 IMPORTAR ARCHIVO</button>
+                <input type="file" id="fileInput" accept="audio/*" hidden>
+            </div>
+
+            <div class="section-label">Waveform</div>
+            <div class="waveform-container" id="waveformContainer">
+                <canvas id="waveCanvas"></canvas>
+                <div class="wave-hint">Clic = corte · Clic&nbsp;der. = borrar</div>
+            </div>
+            <div class="btn-row">
+                <button class="mpc-btn small" id="btnAutoSlice">AUTO CHOP</button>
+                <button class="mpc-btn small warn" id="btnClearSlices">LIMPIAR</button>
+                <div class="sens-wrap">
+                    <label for="sensRange" class="mini-label">SENS.</label>
+                    <input type="range" id="sensRange" min="1" max="9" step="1" value="5">
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: bancos + pads + master -->
+        <div class="right-col">
+
+            <div class="section-label">Bancos (Q W E R)</div>
+            <div class="bank-row" id="bankRow">
+                <button class="bank-btn active" data-bank="0">A</button>
+                <button class="bank-btn" data-bank="1">B</button>
+                <button class="bank-btn" data-bank="2">C</button>
+                <button class="bank-btn" data-bank="3">D</button>
+            </div>
+
+            <div class="pads-grid" id="padsContainer"></div>
+
+            <div class="master-row">
+                <div class="master-block">
+                    <label class="mini-label" for="volRange">VOLUME</label>
+                    <input type="range" id="volRange" min="0" max="1.5" step="0.01" value="1">
+                </div>
+                <label class="toggle-label">
+                    <input type="checkbox" id="loopToggle">
+                    LOOP
+                </label>
+                <button class="mpc-btn warn small" id="btnStopAll">PANIC (Esc)</button>
+            </div>
+            <div class="status-text">Pads con teclas 1234 / QWER / ASDF / ZXCV según el banco activo. Icono ⬇ exporta el slice en WAV.</div>
+        </div>
+
+    </div>
+
+    <footer>
+        <span>100% local — inspirado en la MPC60, la MPC3000 y la SP-1200. Nada de audio sale de tu navegador.</span>
+        <div class="back-link-row">
+            <a href="index.html" class="back-link">← Volver al Archivo Principal</a>
+        </div>
+    </footer>
+</div>
+
+<script>
+'use strict';
+
+/* ---------- Config ---------- */
+const PADS_PER_BANK = 16;
+const NUM_BANKS = 4;
+const MAX_SLICES = PADS_PER_BANK * NUM_BANKS; // 64
+const BANK_KEYS = [
+    ['1','2','3','4','5','6','7','8','9','0','-','=','q','w','e','r'], // no se usa completo, ver KEY_ROWS
+];
+// Mapeo de teclado por banco: cada banco usa una fila de 16 teclas físicas aproximadas a 4x4
+const KEY_ROWS = [
+    ['1','2','3','4','q','w','e','r','a','s','d','f','z','x','c','v'], // banco A: layout completo 4x4 propio
+];
+// En vez de 16 teclas por banco (poco práctico), usamos 1-4/q-r/a-f/z-v para el banco activo (16 teclas fijas)
+const PAD_KEYS = ['1','2','3','4','q','w','e','r','a','s','d','f','z','x','c','v'];
+const BANK_SWITCH_KEYS = { 'ArrowRight': 1, 'ArrowLeft': -1 };
+
+/* ---------- Estado ---------- */
+let audioCtx;
+let masterGain;
+let mediaStream;
+let mediaRecorder;
+let audioChunks = [];
+let audioBuffer = null;
+let slicePoints = [0];           // hasta MAX_SLICES + 1 puntos, en segundos
+let currentBank = 0;             // 0..3
+let activeVoices = new Array(MAX_SLICES).fill(null);
+let resizeRAF = null;
+
+/* ---------- DOM ---------- */
+const btnRecord = document.getElementById('btnRecord');
+const btnStop = document.getElementById('btnStop');
+const btnImport = document.getElementById('btnImport');
+const fileInput = document.getElementById('fileInput');
+const waveCanvas = document.getElementById('waveCanvas');
+const canvasCtx = waveCanvas.getContext('2d');
+const btnAutoSlice = document.getElementById('btnAutoSlice');
+const btnClearSlices = document.getElementById('btnClearSlices');
+const sensRange = document.getElementById('sensRange');
+const padsContainer = document.getElementById('padsContainer');
+const btnStopAll = document.getElementById('btnStopAll');
+const loopToggle = document.getElementById('loopToggle');
+const volRange = document.getElementById('volRange');
+const bankRow = document.getElementById('bankRow');
+
+const lcdStatus = document.getElementById('lcdStatus');
+const lcdBank = document.getElementById('lcdBank');
+const lcdDur = document.getElementById('lcdDur');
+const lcdSlices = document.getElementById('lcdSlices');
+const lcdMode = document.getElementById('lcdMode');
+
+/* ---------- Audio helpers ---------- */
+function ensureAudioContext() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = parseFloat(volRange.value);
+        masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+
+volRange.addEventListener('input', () => {
+    if (masterGain) masterGain.gain.value = parseFloat(volRange.value);
+});
+
+loopToggle.addEventListener('change', updateLcd);
+
+async function loadAudioFromArrayBuffer(arrayBuffer) {
+    ensureAudioContext();
+    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    slicePoints = [0, audioBuffer.duration];
+    drawWaveform();
+    autoSliceAudio();
+}
+
+/* ---------- Fuente: grabar sistema/pestaña ---------- */
+const supportsDisplayCapture = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+if (!supportsDisplayCapture) {
+    btnRecord.disabled = true;
+    btnRecord.title = 'Tu navegador no soporta captura de audio de pantalla/pestaña. Usa Chrome/Edge, o importa un archivo.';
+}
+
+btnRecord.addEventListener('click', async () => {
+    try {
+        mediaStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        const audioTracks = mediaStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            setStatus("SIN AUDIO — MARCA 'COMPARTIR AUDIO'");
+            mediaStream.getTracks().forEach(t => t.stop());
+            return;
         }
-        initPads();
 
-        // Soporte teclado QWERTY (Teclas 1 a 8)
-        window.addEventListener('keydown', (e) => {
-            const num = parseInt(e.key);
-            if (num >= 1 && num <= 8) {
-                triggerSlice(num - 1);
-                highlightPad(num - 1);
-            }
-        });
+        const audioOnlyStream = new MediaStream(audioTracks);
+        audioChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+        mediaRecorder = mimeType ? new MediaRecorder(audioOnlyStream, { mimeType }) : new MediaRecorder(audioOnlyStream);
 
-        function highlightPad(index) {
-            const pads = padsContainer.querySelectorAll('.pad');
-            if (pads[index]) {
-                pads[index].classList.add('active');
-                setTimeout(() => pads[index].classList.remove('active'), 150);
-            }
-        }
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
 
-        // 1. Iniciar Grabación de Audio del Sistema / Pestaña
-        btnRecord.addEventListener('click', async () => {
+        mediaRecorder.onstop = async () => {
             try {
-                mediaStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: true,
-                    audio: true
-                });
-
-                // Extraer solo la pista de audio
-                const audioTracks = mediaStream.getAudioTracks();
-                if (audioTracks.length === 0) {
-                    alert("No seleccionaste audio. Asegúrate de marcar la casilla 'Compartir audio de la pestaña/sistema'.");
-                    mediaStream.getTracks().forEach(t => t.stop());
-                    return;
-                }
-
-                const audioOnlyStream = new MediaStream(audioTracks);
-                audioChunks = [];
-                mediaRecorder = new MediaRecorder(audioOnlyStream);
-
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
-                };
-
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const arrayBuffer = await audioBlob.arrayBuffer();
-                    
-                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-                    
-                    statusMsg.textContent = `Audio grabado con éxito (${audioBuffer.duration.toFixed(2)}s). Listo para trocear.`;
-                    slicePoints = [0, audioBuffer.duration];
-                    drawWaveform();
-                    autoSliceAudio();
-                };
-
-                mediaRecorder.start();
-                btnRecord.disabled = true;
-                btnStop.disabled = false;
-                btnStop.classList.add('recording');
-                statusMsg.textContent = "Grabando audio en curso... Reproduce tu fuente de sonido.";
+                const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                const arrayBuffer = await blob.arrayBuffer();
+                await loadAudioFromArrayBuffer(arrayBuffer);
+                setStatus(`GRABADO OK (${audioBuffer.duration.toFixed(2)}s)`);
             } catch (err) {
-                console.error("Error al capturar audio:", err);
-                statusMsg.textContent = "Cancelado o error en permisos de captura.";
+                console.error(err);
+                setStatus('ERROR AL DECODIFICAR AUDIO');
             }
+        };
+
+        audioTracks[0].addEventListener('ended', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            resetRecordButtons();
         });
 
-        // Detener Grabación
-        btnStop.addEventListener('click', () => {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-                mediaStream.getTracks().forEach(t => t.stop());
-            }
-            btnRecord.disabled = false;
-            btnStop.disabled = true;
-            btnStop.classList.remove('recording');
-        });
+        mediaRecorder.start();
+        btnRecord.disabled = true;
+        btnStop.disabled = false;
+        btnRecord.classList.add('recording');
+        setStatus('GRABANDO... REPRODUCE LA FUENTE');
+    } catch (err) {
+        console.error('Error al capturar audio:', err);
+        setStatus('CAPTURA CANCELADA');
+    }
+});
 
-        // 2. Dibujar Forma de Onda en Canvas
-        function drawWaveform() {
-            if (!audioBuffer) return;
-            
-            waveCanvas.width = waveCanvas.clientWidth;
-            waveCanvas.height = waveCanvas.clientHeight;
-            
-            const width = waveCanvas.width;
-            const height = waveCanvas.height;
-            const rawData = audioBuffer.getChannelData(0);
-            const step = Math.ceil(rawData.length / width);
-            const amp = height / 2;
+btnStop.addEventListener('click', () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    resetRecordButtons();
+});
 
-            canvasCtx.clearRect(0, 0, width, height);
-            canvasCtx.fillStyle = '#151814';
-            canvasCtx.fillRect(0, 0, width, height);
+function resetRecordButtons() {
+    btnRecord.disabled = false;
+    btnStop.disabled = true;
+    btnRecord.classList.remove('recording');
+}
 
-            canvasCtx.lineWidth = 1;
-            canvasCtx.strokeStyle = '#53FA00';
-            canvasCtx.beginPath();
+/* ---------- Fuente: importar archivo ---------- */
+btnImport.addEventListener('click', () => fileInput.click());
 
-            for (let i = 0; i < width; i++) {
-                let min = 1.0;
-                let max = -1.0;
-                for (let j = 0; j < step; j++) {
-                    const datum = rawData[(i * step) + j];
-                    if (datum < min) min = datum;
-                    if (datum > max) max = datum;
-                }
-                canvasCtx.moveTo(i, (1 + min) * amp);
-                canvasCtx.lineTo(i, (1 + max) * amp);
-            }
-            canvasCtx.stroke();
+fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+        setStatus(`CARGANDO "${file.name.toUpperCase()}"...`);
+        const arrayBuffer = await file.arrayBuffer();
+        await loadAudioFromArrayBuffer(arrayBuffer);
+        setStatus(`CARGADO: ${file.name.toUpperCase()} (${audioBuffer.duration.toFixed(2)}s)`);
+    } catch (err) {
+        console.error(err);
+        setStatus('ARCHIVO NO VALIDO COMO AUDIO');
+    } finally {
+        fileInput.value = '';
+    }
+});
 
-            // Dibujar Líneas de Corte (Slices)
-            slicePoints.forEach(time => {
-                const x = (time / audioBuffer.duration) * width;
-                canvasCtx.strokeStyle = '#4279CD';
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(x, 0);
-                canvasCtx.lineTo(x, height);
-                canvasCtx.stroke();
-            });
+/* ---------- LCD ---------- */
+function setStatus(text) {
+    lcdStatus.textContent = text;
+}
+
+function updateLcd() {
+    lcdBank.textContent = `BANK:${'ABCD'[currentBank]}`;
+    lcdDur.textContent = audioBuffer ? `DUR:${audioBuffer.duration.toFixed(2)}s` : 'DUR:--.--s';
+    lcdSlices.textContent = `SLICES:${Math.max(0, slicePoints.length - 1)}`;
+    lcdMode.textContent = `MODE:${loopToggle.checked ? 'LOOP' : 'ONE-SHOT'}`;
+    if (!audioBuffer) setStatus('NO HAY AUDIO CARGADO');
+}
+
+/* ---------- Waveform ---------- */
+function resizeCanvasToDisplaySize() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = waveCanvas.getBoundingClientRect();
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (waveCanvas.width !== w || waveCanvas.height !== h) {
+        waveCanvas.width = w;
+        waveCanvas.height = h;
+    }
+}
+
+function drawWaveform() {
+    if (!audioBuffer) return;
+    resizeCanvasToDisplaySize();
+
+    const width = waveCanvas.width;
+    const height = waveCanvas.height;
+    const rawData = audioBuffer.getChannelData(0);
+    const step = Math.max(1, Math.ceil(rawData.length / width));
+    const amp = height / 2;
+
+    canvasCtx.clearRect(0, 0, width, height);
+    canvasCtx.fillStyle = '#000';
+    canvasCtx.fillRect(0, 0, width, height);
+
+    canvasCtx.lineWidth = 1;
+    canvasCtx.strokeStyle = '#ffb000';
+    canvasCtx.beginPath();
+    for (let i = 0; i < width; i++) {
+        let min = 1.0, max = -1.0;
+        const start = i * step;
+        for (let j = 0; j < step && (start + j) < rawData.length; j++) {
+            const d = rawData[start + j];
+            if (d < min) min = d;
+            if (d > max) max = d;
         }
+        canvasCtx.moveTo(i, (1 + min) * amp);
+        canvasCtx.lineTo(i, (1 + max) * amp);
+    }
+    canvasCtx.stroke();
 
-        // Clic en waveform para agregar corte manual
-        waveCanvas.addEventListener('click', (e) => {
-            if (!audioBuffer) return;
-            const rect = waveCanvas.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const clickedTime = (clickX / waveCanvas.width) * audioBuffer.duration;
-            
-            slicePoints.push(clickedTime);
-            slicePoints.sort((a, b) => a - b);
-            drawWaveform();
-        });
+    slicePoints.forEach((time, idx) => {
+        const x = (time / audioBuffer.duration) * width;
+        canvasCtx.strokeStyle = idx === 0 ? 'rgba(63,127,209,0.35)' : '#3f7fd1';
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(x, 0);
+        canvasCtx.lineTo(x, height);
+        canvasCtx.stroke();
+    });
 
-        // 3. Auto-Trocear (Detección simple de picos / umbral)
-        btnAutoSlice.addEventListener('click', () => {
-            autoSliceAudio();
-        });
+    // Marca los límites de banco activo con una franja sutil
+    const bankStartIdx = currentBank * PADS_PER_BANK;
+    const bankEndIdx = Math.min(slicePoints.length - 1, bankStartIdx + PADS_PER_BANK);
+    if (bankStartIdx < slicePoints.length - 1) {
+        const xStart = (slicePoints[bankStartIdx] / audioBuffer.duration) * width;
+        const xEnd = (slicePoints[bankEndIdx] / audioBuffer.duration) * width;
+        canvasCtx.fillStyle = 'rgba(255,176,0,0.07)';
+        canvasCtx.fillRect(xStart, 0, xEnd - xStart, height);
+    }
+}
 
-        function autoSliceAudio() {
-            if (!audioBuffer) return;
-            const rawData = audioBuffer.getChannelData(0);
-            const duration = audioBuffer.duration;
-            let newSlices = [0];
+window.addEventListener('resize', () => {
+    if (resizeRAF) cancelAnimationFrame(resizeRAF);
+    resizeRAF = requestAnimationFrame(drawWaveform);
+});
 
-            const sampleRate = audioBuffer.sampleRate;
-            const windowSize = Math.floor(sampleRate * 0.1); // Ventanas de 100ms
-            
-            let threshold = 0.15; // Nivel de energía para considerar un golpe
+waveCanvas.addEventListener('click', (e) => {
+    if (!audioBuffer) return;
+    const rect = waveCanvas.getBoundingClientRect();
+    const clickedTime = ((e.clientX - rect.left) / rect.width) * audioBuffer.duration;
+    slicePoints.push(clickedTime);
+    slicePoints = [...new Set(slicePoints.map(t => Math.round(t * 1000) / 1000))].sort((a, b) => a - b);
+    if (slicePoints.length > MAX_SLICES + 1) slicePoints = slicePoints.slice(0, MAX_SLICES + 1);
+    drawWaveform();
+    renderPads();
+});
 
-            for (let i = 0; i < rawData.length; i += windowSize) {
-                let sum = 0;
-                for (let j = 0; j < windowSize && (i + j) < rawData.length; j++) {
-                    sum += Math.abs(rawData[i + j]);
-                }
-                let avg = sum / windowSize;
-                if (avg > threshold) {
-                    let time = i / sampleRate;
-                    // Evitar cortes muy pegados (mínimo 0.2s de separación)
-                    if (time - newSlices[newSlices.length - 1] > 0.2) {
-                        newSlices.push(time);
-                    }
-                }
-            }
+waveCanvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (!audioBuffer || slicePoints.length <= 2) return;
+    const rect = waveCanvas.getBoundingClientRect();
+    const clickedTime = ((e.clientX - rect.left) / rect.width) * audioBuffer.duration;
+    let nearestIdx = 1, nearestDist = Infinity;
+    for (let i = 1; i < slicePoints.length; i++) {
+        const d = Math.abs(slicePoints[i] - clickedTime);
+        if (d < nearestDist) { nearestDist = d; nearestIdx = i; }
+    }
+    slicePoints.splice(nearestIdx, 1);
+    drawWaveform();
+    renderPads();
+});
 
-            // Asegurar máximo 8 cortes para los pads
-            slicePoints = newSlices.slice(0, 8);
-            if (slicePoints.length < 2) slicePoints = [0, duration];
-            drawWaveform();
-            statusMsg.textContent = `Auto-troceo completo: ${slicePoints.length} Slices asignados a pads.`;
+/* ---------- Auto-chop ---------- */
+btnAutoSlice.addEventListener('click', autoSliceAudio);
+sensRange.addEventListener('change', () => { if (audioBuffer) autoSliceAudio(); });
+
+function autoSliceAudio() {
+    if (!audioBuffer) return;
+    const rawData = audioBuffer.getChannelData(0);
+    const duration = audioBuffer.duration;
+    const sampleRate = audioBuffer.sampleRate;
+    const windowSize = Math.floor(sampleRate * 0.05);
+
+    let peak = 0;
+    for (let i = 0; i < rawData.length; i++) {
+        const v = Math.abs(rawData[i]);
+        if (v > peak) peak = v;
+    }
+    if (peak < 1e-6) peak = 1;
+
+    const energies = [];
+    for (let i = 0; i < rawData.length; i += windowSize) {
+        let sum = 0, count = 0;
+        for (let j = 0; j < windowSize && (i + j) < rawData.length; j++) {
+            const v = rawData[i + j] / peak;
+            sum += v * v;
+            count++;
         }
+        energies.push(count ? Math.sqrt(sum / count) : 0);
+    }
 
-        btnClearSlices.addEventListener('click', () => {
-            if (!audioBuffer) return;
-            slicePoints = [0, audioBuffer.duration];
-            drawWaveform();
-        });
+    const sens = parseInt(sensRange.value, 10) || 5;
+    const threshold = 0.42 - (sens - 5) * 0.035;
+    const minGapSec = 0.15;
 
-        // 4. Disparar Slices mediante Pads
-        function triggerSlice(index) {
-            if (!audioBuffer || !audioCtx) return;
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-
-            if (index >= slicePoints.length - 1) return; // Si no hay slice definido para este pad
-
-            const startTime = slicePoints[index];
-            const endTime = slicePoints[index + 1] || audioBuffer.duration;
-            const duration = endTime - startTime;
-
-            const source = audioCtx.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(audioCtx.destination);
-            
-            source.start(audioCtx.currentTime, startTime, duration);
-            highlightPad(index);
+    let newSlices = [0];
+    let wasAbove = false;
+    for (let w = 0; w < energies.length; w++) {
+        const isAbove = energies[w] > threshold;
+        if (isAbove && !wasAbove) {
+            const time = (w * windowSize) / sampleRate;
+            if (time - newSlices[newSlices.length - 1] > minGapSec) newSlices.push(time);
         }
-    </script>
+        wasAbove = isAbove;
+    }
+
+    slicePoints = newSlices.slice(0, MAX_SLICES);
+    if (slicePoints.length < 2) slicePoints = [0, duration];
+    drawWaveform();
+    renderPads();
+    setStatus(`AUTO CHOP: ${slicePoints.length - 1} SLICES`);
+}
+
+btnClearSlices.addEventListener('click', () => {
+    if (!audioBuffer) return;
+    slicePoints = [0, audioBuffer.duration];
+    drawWaveform();
+    renderPads();
+});
+
+/* ---------- Bancos ---------- */
+bankRow.addEventListener('click', (e) => {
+    const btn = e.target.closest('.bank-btn');
+    if (!btn) return;
+    setBank(parseInt(btn.dataset.bank, 10));
+});
+
+function setBank(idx) {
+    currentBank = Math.max(0, Math.min(NUM_BANKS - 1, idx));
+    bankRow.querySelectorAll('.bank-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.bank, 10) === currentBank);
+    });
+    renderPads();
+    drawWaveform();
+    updateLcd();
+}
+
+/* ---------- Pads ---------- */
+function initPads() {
+    padsContainer.innerHTML = '';
+    for (let i = 0; i < PADS_PER_BANK; i++) {
+        const pad = document.createElement('div');
+        pad.className = 'pad empty';
+        pad.dataset.slot = String(i);
+        pad.tabIndex = 0;
+        pad.setAttribute('role', 'button');
+        pad.innerHTML = `
+            <div class="pad-top-row">
+                <span class="pad-num">${PAD_KEYS[i].toUpperCase()}</span>
+                <span class="pad-download" title="Descargar slice WAV" aria-label="Descargar slice">⬇</span>
+            </div>
+            <div>
+                <div class="pad-info">--</div>
+                <div class="pad-dur">—</div>
+            </div>
+        `;
+        pad.addEventListener('click', (e) => {
+            if (e.target.classList.contains('pad-download')) return;
+            triggerPadSlot(i);
+        });
+        pad.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerPadSlot(i); }
+        });
+        pad.querySelector('.pad-download').addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadSlot(i);
+        });
+        padsContainer.appendChild(pad);
+    }
+    renderPads();
+}
+initPads();
+
+function slotToSliceIndex(slot) { return currentBank * PADS_PER_BANK + slot; }
+
+function renderPads() {
+    const pads = padsContainer.querySelectorAll('.pad');
+    pads.forEach((pad, slot) => {
+        const sliceIndex = slotToSliceIndex(slot);
+        const hasSlice = !!audioBuffer && sliceIndex < slicePoints.length - 1;
+        pad.classList.toggle('empty', !hasSlice);
+        const infoEl = pad.querySelector('.pad-info');
+        const durEl = pad.querySelector('.pad-dur');
+        if (hasSlice) {
+            const dur = (slicePoints[sliceIndex + 1] ?? audioBuffer.duration) - slicePoints[sliceIndex];
+            infoEl.textContent = `SLICE ${sliceIndex + 1}`;
+            durEl.textContent = `${dur.toFixed(2)}s`;
+        } else {
+            infoEl.textContent = '--';
+            durEl.textContent = '—';
+        }
+    });
+    updateLcd();
+}
+
+/* ---------- Teclado: pads + bancos + panic ---------- */
+window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    if (e.key === 'Escape') { stopAllVoices(); return; }
+
+    const bankShift = BANK_SWITCH_KEYS[e.key];
+    if (bankShift !== undefined) { setBank(currentBank + bankShift); return; }
+
+    const keyLower = e.key.toLowerCase();
+    const slot = PAD_KEYS.indexOf(keyLower);
+    if (slot !== -1) {
+        triggerPadSlot(slot);
+        highlightPad(slot);
+    }
+});
+
+function highlightPad(slot) {
+    const pads = padsContainer.querySelectorAll('.pad');
+    if (pads[slot]) {
+        pads[slot].classList.add('active');
+        setTimeout(() => pads[slot].classList.remove('active'), 150);
+    }
+}
+
+function getSliceRange(sliceIndex) {
+    if (!audioBuffer || sliceIndex >= slicePoints.length - 1) return null;
+    const startTime = slicePoints[sliceIndex];
+    const endTime = slicePoints[sliceIndex + 1] ?? audioBuffer.duration;
+    return { startTime, endTime, duration: endTime - startTime };
+}
+
+function triggerPadSlot(slot) {
+    if (!audioBuffer) return;
+    ensureAudioContext();
+    const sliceIndex = slotToSliceIndex(slot);
+    const range = getSliceRange(sliceIndex);
+    if (!range) return;
+
+    stopVoice(sliceIndex);
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    const gainNode = audioCtx.createGain();
+    source.connect(gainNode);
+    gainNode.connect(masterGain);
+
+    const loop = loopToggle.checked;
+    if (loop) {
+        source.loop = true;
+        source.loopStart = range.startTime;
+        source.loopEnd = range.endTime;
+        source.start(audioCtx.currentTime, range.startTime);
+    } else {
+        source.start(audioCtx.currentTime, range.startTime, range.duration);
+    }
+
+    activeVoices[sliceIndex] = { source, gainNode, slot };
+    const pads = padsContainer.querySelectorAll('.pad');
+    if (pads[slot]) pads[slot].classList.add('playing');
+
+    source.onended = () => {
+        if (activeVoices[sliceIndex] && activeVoices[sliceIndex].source === source) {
+            activeVoices[sliceIndex] = null;
+            if (pads[slot]) pads[slot].classList.remove('playing');
+        }
+    };
+}
+
+function stopVoice(sliceIndex) {
+    const voice = activeVoices[sliceIndex];
+    if (voice) {
+        try { voice.source.stop(); } catch (_) { /* ya detenida */ }
+        activeVoices[sliceIndex] = null;
+        const pads = padsContainer.querySelectorAll('.pad');
+        if (pads[voice.slot]) pads[voice.slot].classList.remove('playing');
+    }
+}
+
+function stopAllVoices() {
+    for (let i = 0; i < activeVoices.length; i++) stopVoice(i);
+}
+
+btnStopAll.addEventListener('click', stopAllVoices);
+
+/* ---------- Exportar slice como WAV ---------- */
+function downloadSlot(slot) {
+    const sliceIndex = slotToSliceIndex(slot);
+    const range = getSliceRange(sliceIndex);
+    if (!range) return;
+    const wavBlob = encodeSliceToWav(audioBuffer, range.startTime, range.endTime);
+    const url = URL.createObjectURL(wavBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `s0lid142-bank${'ABCD'[currentBank]}-slice${sliceIndex + 1}.wav`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function encodeSliceToWav(buffer, startTime, endTime) {
+    const numChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const startSample = Math.floor(startTime * sampleRate);
+    const endSample = Math.min(buffer.length, Math.floor(endTime * sampleRate));
+    const numFrames = Math.max(0, endSample - startSample);
+
+    const bytesPerSample = 2;
+    const blockAlign = numChannels * bytesPerSample;
+    const dataSize = numFrames * blockAlign;
+    const bufferSize = 44 + dataSize;
+
+    const arrayBuffer = new ArrayBuffer(bufferSize);
+    const view = new DataView(arrayBuffer);
+
+    function writeString(offset, str) {
+        for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+    }
+
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bytesPerSample * 8, true);
+    writeString(36, 'data');
+    view.setUint32(40, dataSize, true);
+
+    const channelData = [];
+    for (let ch = 0; ch < numChannels; ch++) channelData.push(buffer.getChannelData(ch));
+
+    let offset = 44;
+    for (let i = 0; i < numFrames; i++) {
+        for (let ch = 0; ch < numChannels; ch++) {
+            const sample = Math.max(-1, Math.min(1, channelData[ch][startSample + i] || 0));
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            offset += 2;
+        }
+    }
+
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
+}
+
+/* ---------- Init ---------- */
+updateLcd();
+
+</script>
 </body>
 </html>
