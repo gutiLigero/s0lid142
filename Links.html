@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>s0lid142 — Links & Streaming</title>
+  <style>
+    :root {
+      --bg-black: #0F110E;
+      --surface-dark: #151814;
+      --surface-hover: #1c211a;
+      --text-main: #DDE1DB;
+      --text-muted: #B6BFB1;
+      --accent-neon: #53FA00;
+      --border-subtle: rgba(182, 191, 177, 0.18);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-black);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .profile-card {
+      width: 100%;
+      background-color: var(--surface-dark);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 28px 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .avatar-frame {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 14px auto;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: #1a1e19;
+    }
+
+    .avatar-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-card h1 {
+      font-size: 1.4rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .location {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .social-icons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .social-icons a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: color 0.2s;
+    }
+
+    .social-icons a:hover { color: var(--accent-neon); }
+
+    .links-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .link-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-dark);
+      color: var(--text-main);
+      text-decoration: none;
+      padding: 16px 20px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      transition: all 0.25s ease;
+      font-weight: 500;
+      font-size: 0.92rem;
+    }
+
+    .link-item:hover {
+      background: var(--surface-hover);
+      border-color: var(--accent-neon);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(83, 250, 0, 0.08);
+    }
+
+    .link-item span { color: var(--text-muted); transition: color 0.2s; }
+    .link-item:hover span { color: var(--accent-neon); }
+
+    .back-link {
+      margin-top: 30px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--accent-neon); }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="profile-card">
+      <div class="avatar-frame">
+        <img src="avatar.jpg" alt="s0lid142">
+      </div>
+      <h1>s0lid142</h1>
+      <p class="location">📍 Envigado, Antioquia, Colombia</p>
+      <div class="social-icons">
+        <a href="https://www.instagram.com/ttt.discos/" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.tiktok.com/@elpablones" target="_blank" rel="noopener">TikTok</a>
+        <a href="https://x.com/ElPablones" target="_blank" rel="noopener">X</a>
+      </div>
+    </div>
+
+    <div class="links-list">
+      <a href="https://s0lid142.bandcamp.com/" target="_blank" rel="noopener" class="link-item">
+        Bandcamp <span>↗</span>
+      </a>
+      <a href="https://music.apple.com/co/artist/s0lid142/1729883020?l=en-GB" target="_blank" rel="noopener" class="link-item">
+        Apple Music <span>↗</span>
+      </a>
+      <a href="https://open.spotify.com/" target="_blank" rel="noopener" class="link-item">
+        Spotify <span>↗</span>
+      </a>
+      <a href="https://on.soundcloud.com/nEYdslx9ZGqkxoVHA" target="_blank" rel="noopener" class="link-item">
+        SoundCloud <span>↗</span>
+      </a>
+      <a href="https://www.youtube.com/@s0lid142" target="_blank" rel="noopener" class="link-item">
+        YouTube <span>↗</span>
+      </a>
+    </div>
+
+    <a href="index.html" class="back-link">← Volver al Archivo Principal</a>
+
+  </div>
+
+</body>
+</html>
