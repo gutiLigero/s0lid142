@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sintetizador Web</title>
+  <!-- Importamos la librería de Tone.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    body {
+      background-color: #0e0e11;
+      color: #f0f0f5;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .synth-container {
+      background: #1a1a22;
+      padding: 30px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: center;
+    }
+    .keyboard {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .key {
+      width: 60px;
+      height: 180px;
+      background: #f0f0f5;
+      border-radius: 0 0 8px 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      transition: background 0.1s;
+    }
+    .key:active {
+      background: #8c8c9e;
+      transform: translateY(2px);
+    }
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+    select, button.back-btn {
+      background: #262633;
+      color: white;
+      border: 1px solid #8c8c9e;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="synth-container">
+    <h2>🎹 Web Synth</h2>
+    <p style="color: #8c8c9e;">Presiona las teclas para hacer ruido</p>
+    
+    <div class="controls">
+      <label>Onda: </label>
+      <select id="waveform">
+        <option value="square">Square (Retro)</option>
+        <option value="sawtooth">Sawtooth (Agresiva)</option>
+        <option value="triangle">Triangle (Suave)</option>
+        <option value="sine">Sine (Pura)</option>
+      </select>
+    </div>
+
+    <div class="keyboard">
+      <!-- Asignamos las notas en el atributo data-note -->
+      <button class="key" data-note="C4">C</button>
+      <button class="key" data-note="D4">D</button>
+      <button class="key" data-note="E4">E</button>
+      <button class="key" data-note="F4">F</button>
+      <button class="key" data-note="G4">G</button>
+      <button class="key" data-note="A4">A</button>
+      <button class="key" data-note="B4">B</button>
+      <button class="key" data-note="C5">C</button>
+    </div>
+    
+    <br>
+    <a href="index.html"><button class="back-btn">← Volver al inicio</button></a>
+  </div>
+
+  <script>
+    // 1. Configuramos los efectos (Reverb y Filtro para un sonido más profundo)
+    const reverb = new Tone.Reverb(2.5).toDestination();
+    const filter = new Tone.Filter(1200, "lowpass").connect(reverb);
+    
+    // 2. Creamos el Sintetizador Polifónico y lo conectamos a los efectos
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: "square" },
+      envelope: { attack: 0.05, decay: 0.2, sustain: 0.5, release: 1 }
+    }).connect(filter);
+
+    // 3. Lógica para cambiar el tipo de onda con el selector
+    document.getElementById("waveform").addEventListener("change", (e) => {
+      synth.set({ oscillator: { type: e.target.value } });
+    });
+
+    // 4. Lógica para que las teclas suenen al hacer clic
+    document.querySelectorAll(".key").forEach(key => {
+      key.addEventListener("mousedown", async () => {
+        await Tone.start(); // El navegador exige esto la primera vez
+        const note = key.getAttribute("data-note");
+        synth.triggerAttackRelease(note, "8n");
+      });
+    });
+  </script>
+</body>
+</html>
