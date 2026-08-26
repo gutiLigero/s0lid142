@@ -428,6 +428,10 @@ const STEP_COUNT = 16;
 /* =========================================================================
    2. BUS MÁSTER: cada pad -> su propia ganancia -> masterGain -> limiter
    ========================================================================= */
+// 'interactive' prioriza latencia mínima — clave para tocar los pads en vivo.
+// Debe fijarse antes de crear cualquier nodo de Tone.
+Tone.setContext(new Tone.Context({ latencyHint: 'interactive' }));
+
 const limiter = new Tone.Limiter(-1).toDestination();
 const masterGain = new Tone.Gain(0.85).connect(limiter);
 
@@ -494,6 +498,12 @@ async function ensureAudioStarted() {
   if (Tone.context.state !== 'running') await Tone.start();
 }
 
+// Si el navegador suspende el contexto por pérdida de foco (pestaña oculta),
+// lo reanudamos al volver para que el secuenciador y los pads no queden mudos.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && Tone.context.state === 'suspended') Tone.context.resume();
+});
+
 /* =========================================================================
    5. RENDER DE PADS (botones accesibles generados desde config)
    ========================================================================= */
@@ -527,6 +537,12 @@ PAD_CONFIG.forEach(cfg => {
 
   btn.addEventListener('mousedown', () => onPress());
   btn.addEventListener('touchstart', e => { e.preventDefault(); onPress(); }, { passive: false });
+  // Bug real: el pad es un <button> con aria-label (pensado para accesibilidad)
+  // pero solo escuchaba mousedown/touchstart. Un usuario de teclado (Tab +
+  // Enter/Espacio) o de lector de pantalla no podía dispararlo nunca.
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPress(); }
+  });
 });
 
 /* =========================================================================
