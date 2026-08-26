@@ -205,7 +205,7 @@
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    // 2. Cargar tu archivo SpeakerStudio.obj
+    // 2. .OBJ
     let solidObj; 
     
     const material = new THREE.MeshBasicMaterial({ 
@@ -217,7 +217,7 @@
 
     const loader = new THREE.OBJLoader();
     
-    loader.load('SpeakerStudio.obj', function (object) {
+    loader.load('Bong.obj', function (object) {
       solidObj = object;
       
       solidObj.traverse(function (child) {
