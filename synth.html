@@ -206,11 +206,12 @@
 
   .key.black:active, .key.black.active { background: #33333d; }
 
-  .kb-1 { left: 33px; }
-  .kb-2 { left: 79px; }
-  .kb-4 { left: 171px; }
-  .kb-5 { left: 217px; }
-  .kb-6 { left: 263px; }
+  /* Posicionamiento exacto de las teclas negras sobre el espacio de las blancas (ancho 44px + 2px margen = 46px por paso) */
+  .kb-c-sharp { left: 31px; }
+  .kb-d-sharp { left: 77px; }
+  .kb-f-sharp { left: 169px; }
+  .kb-g-sharp { left: 215px; }
+  .kb-a-sharp { left: 261px; }
 
   .footer-controls {
     margin-top: 15px;
@@ -249,8 +250,7 @@
 
     <div class="section-label">Oscillator Bank &amp; Mixer (4 VCOs paráfonos + ruido)</div>
     <div class="modules-row" id="osc-bank">
-      <!-- OSC modules injected by JS -->
-    </div>
+      </div>
 
     <div class="section-label">Filter · Envelopes · Modulation</div>
     <div class="modules-row">
@@ -348,16 +348,16 @@
     <div class="keyboard-container">
       <div class="keyboard">
         <button class="key white" data-note="C4">C4</button>
-        <button class="key black kb-1" data-note="C#4">C#</button>
+        <button class="key black kb-c-sharp" data-note="C#4">C#</button>
         <button class="key white" data-note="D4">D4</button>
-        <button class="key black kb-2" data-note="D#4">D#</button>
+        <button class="key black kb-d-sharp" data-note="D#4">D#</button>
         <button class="key white" data-note="E4">E4</button>
         <button class="key white" data-note="F4">F4</button>
-        <button class="key black kb-4" data-note="F#4">F#</button>
+        <button class="key black kb-f-sharp" data-note="F#4">F#</button>
         <button class="key white" data-note="G4">G4</button>
-        <button class="key black kb-5" data-note="G#4">G#</button>
+        <button class="key black kb-g-sharp" data-note="G#4">G#</button>
         <button class="key white" data-note="A4">A4</button>
-        <button class="key black kb-6" data-note="A#4">A#</button>
+        <button class="key black kb-a-sharp" data-note="A#4">A#</button>
         <button class="key white" data-note="B4">B4</button>
         <button class="key white" data-note="C5">C5</button>
       </div>
@@ -479,18 +479,16 @@ class PolyDEngine {
     this.heldNotes.push({ note, midi, baseFreq });
 
     if (this.mode === 'poly') {
-      // asigna la nota a un VCO libre (paráfono, hasta 4 notas simultáneas)
       let slotIndex = this.slots.findIndex((s, i) => s.note === null && this.oscNodes[i].on);
       if (slotIndex === -1) {
         const onIdx = this.oscNodes.map((o, i) => (o.on ? i : -1)).filter(i => i >= 0);
-        slotIndex = onIdx.length ? onIdx[0] : -1; // robo simple de voz si no hay libres
+        slotIndex = onIdx.length ? onIdx[0] : -1;
       }
       if (slotIndex !== -1) {
         this.slots[slotIndex].note = note;
         this._setOscFrequency(slotIndex, baseFreq, false);
       }
     } else {
-      // mono / unison: todos los VCO activos siguen esta nota
       this.oscNodes.forEach((o, i) => {
         if (o.on) {
           this.slots[i].note = note;
@@ -500,10 +498,6 @@ class PolyDEngine {
     }
 
     this._updateKeyboardTrack(midi);
-
-    // El filtro y la VCA son ÚNICOS: cada tecla nueva retriggerea el
-    // contour compartido (comportamiento real y algo "impredecible" al
-    // tocar acordes, característico de los paráfonos analógicos).
     this.ampEnv.triggerAttack();
     this.filterEnv.triggerAttack();
   }
@@ -519,7 +513,6 @@ class PolyDEngine {
     } else {
       this.oscNodes.forEach((o, i) => { if (this.slots[i].note === note) this.slots[i].note = null; });
       if (this.heldNotes.length > 0) {
-        // last-note priority: vuelve a la nota anterior mantenida
         const last = this.heldNotes[this.heldNotes.length - 1];
         this.oscNodes.forEach((o, i) => {
           if (o.on) {
@@ -608,7 +601,6 @@ engine.oscNodes.forEach((cfg, i) => {
   });
 });
 
-// módulo de ruido añadido al final del banco
 const noiseBox = document.createElement('div');
 noiseBox.className = 'module-box';
 noiseBox.innerHTML = `
@@ -673,7 +665,7 @@ document.getElementById('chorus-mix').addEventListener('input', e => engine.chor
 document.getElementById('reverb-mix').addEventListener('input', e => engine.reverb.wet.value = parseFloat(e.target.value));
 document.getElementById('master-vol').addEventListener('input', e => engine.masterGain.gain.rampTo(parseFloat(e.target.value), 0.02));
 
-/* ---- Teclado virtual (mousedown/up = gate real, no nota fija) ---- */
+/* ---- Teclado virtual ---- */
 document.querySelectorAll('.key').forEach(key => {
   const note = key.getAttribute('data-note');
   const press = async () => {
@@ -692,7 +684,7 @@ document.querySelectorAll('.key').forEach(key => {
   key.addEventListener('touchend', e => { e.preventDefault(); release(); });
 });
 
-/* ---- Teclado físico (A-K) con keydown/keyup reales ---- */
+/* ---- Teclado físico (A-K) ---- */
 const keyMap = {
   'a': 'C4', 'w': 'C#4', 's': 'D4', 'e': 'D#4', 'd': 'E4',
   'f': 'F4', 't': 'F#4', 'g': 'G4', 'y': 'G#4', 'h': 'A4',
