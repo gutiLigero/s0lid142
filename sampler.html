@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>s0lid142 — Video Sampler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>s0lid142 — Web Audio Sampler & Chopper</title>
     <style>
         :root {
             --bg-black: #0F110E;
@@ -11,153 +12,439 @@
             --text-muted: #B6BFB1;
             --brand-green: #408C48;
             --accent-neon: #53FA00;
+            --accent-red: #FA3030;
             --border-subtle: rgba(182, 191, 177, 0.18);
         }
 
-        body { 
-            background-color: var(--bg-black); 
-            color: var(--text-main); 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; 
-            text-align: center; 
-            padding: 40px 20px; 
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 15px;
         }
 
-        h1 { font-size: 1.8rem; font-weight: 300; margin-bottom: 20px; }
+        .container {
+            width: 100%;
+            max-width: 650px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-        .control-panel {
+        header {
+            text-align: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 15px;
+        }
+
+        header h1 { font-size: 1.5rem; font-weight: 300; letter-spacing: -0.5px; }
+        header p { font-size: 0.8rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 4px; }
+
+        .panel {
             background: var(--surface-dark);
             border: 1px solid var(--border-subtle);
-            padding: 20px;
             border-radius: 4px;
-            max-width: 600px;
-            margin: 0 auto 20px auto;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
 
-        input[type="text"], input[type="file"] {
-            background: var(--bg-black);
-            border: 1px solid var(--border-subtle);
-            color: var(--text-main);
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            width: 100%;
+        .panel-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-neon);
+            font-weight: 600;
         }
 
-        button.load-btn {
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: var(--surface-dark);
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            border-color: var(--accent-neon);
+            color: var(--accent-neon);
+        }
+
+        button.primary {
             background: var(--accent-neon);
             color: var(--bg-black);
             border: none;
-            padding: 12px;
             font-weight: 600;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: opacity 0.2s;
         }
 
-        button.load-btn:hover { opacity: 0.85; }
+        button.primary:hover {
+            opacity: 0.85;
+            color: var(--bg-black);
+        }
 
-        video { 
-            width: 100%; 
-            max-width: 600px; 
-            border: 1px solid var(--border-subtle); 
-            border-radius: 4px;
-            margin-bottom: 20px; 
+        button.danger {
+            background: rgba(250, 48, 48, 0.15);
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+
+        button.danger.recording {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        /* Canvas de Onda */
+        .waveform-container {
+            width: 100%;
+            height: 140px;
             background: #000;
-        }
-
-        .pad { 
-            background: var(--surface-dark); 
-            border: 1px solid var(--accent-neon); 
-            color: var(--accent-neon); 
-            padding: 20px 40px; 
-            font-size: 1rem; 
-            letter-spacing: 1px;
-            cursor: pointer; 
-            display: inline-block; 
+            border: 1px solid var(--border-subtle);
             border-radius: 4px;
-            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
         }
 
-        .pad:hover {
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Pads Grid */
+        .pads-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .pad {
+            background: var(--bg-black);
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            height: 75px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            user-select: none;
+        }
+
+        .pad .pad-num {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .pad .pad-info {
+            font-size: 0.7rem;
+            color: var(--accent-neon);
+        }
+
+        .pad:hover, .pad.active {
+            border-color: var(--accent-neon);
             background: #1c211a;
-            box-shadow: 0 0 15px rgba(83, 250, 0, 0.15);
+            box-shadow: 0 0 10px rgba(83, 250, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .status-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
-    <h1>Muestreo de vídeo interactivo</h1>
-    
-    <div class="control-panel">
-        <div style="display: flex; gap: 8px;">
-            <input type="text" id="videoUrlInput" placeholder="Pega un enlace directo a video (.mp4)...">
-            <button class="load-btn" id="loadUrlBtn">Cargar Link</button>
+    <div class="container">
+        <header>
+            <h1>s0lid142 — Desktop Audio Sampler</h1>
+            <p>Captura sistema/pestaña • Auto-Chopper • Pads</p>
+        </header>
+
+        <div class="panel">
+            <span class="panel-title">[01] Captura de Audio</span>
+            <div class="controls-row">
+                <button class="primary" id="btnRecord">Grabar Audio (Sistema / Pestaña)</button>
+                <button class="danger" id="btnStop" disabled>Detener Grabación</button>
+            </div>
+            <div class="status-text" id="statusMsg">Listo para capturar audio de streaming, pestañas o sistema.</div>
         </div>
-        
-        <p style="font-size: 0.75rem; color: var(--text-muted);">O sube un archivo local:</p>
-        
-        <input type="file" id="videoUploader" accept="video/*">
+
+        <div class="panel">
+            <span class="panel-title">[02] Waveform & Slices (Haz clic para cortar)</span>
+            <div class="waveform-container">
+                <canvas id="waveCanvas"></canvas>
+            </div>
+            <div class="controls-row" style="justify-content: space-between; align-items: center;">
+                <button id="btnAutoSlice">Auto-Trocear (Detectar Picos)</button>
+                <button id="btnClearSlices" style="border-color: var(--accent-red); color: var(--accent-red);">Limpiar Cortes</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <span class="panel-title">[03] Performance Pads (Teclas 1-8)</span>
+            <div class="pads-grid" id="padsContainer">
+                </div>
+        </div>
     </div>
 
-    <video id="mediaVideo" controls crossorigin="anonymous"></video>
-    <br>
-    
-    <div class="pad" id="cuePad">DISPARAR / RE-TRIGGER (0s)</div>
-
     <script>
-        const urlInput = document.getElementById('videoUrlInput');
-        const loadUrlBtn = document.getElementById('loadUrlBtn');
-        const uploader = document.getElementById('videoUploader');
-        const videoElement = document.getElementById('mediaVideo');
-        const cuePad = document.getElementById('cuePad');
-
         let audioCtx;
-        let sourceNode;
+        let mediaStream;
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBuffer = null;
+        
+        // Puntos de corte en segundos
+        let slicePoints = [0]; 
 
-        // 1. Cargar video mediante enlace de texto
-        loadUrlBtn.addEventListener('click', () => {
-            const url = urlInput.value.trim();
-            if (url) {
-                videoElement.src = url;
-                videoElement.load();
+        const btnRecord = document.getElementById('btnRecord');
+        const btnStop = document.getElementById('btnStop');
+        const statusMsg = document.getElementById('statusMsg');
+        const waveCanvas = document.getElementById('waveCanvas');
+        const canvasCtx = waveCanvas.getContext('2d');
+        const btnAutoSlice = document.getElementById('btnAutoSlice');
+        const btnClearSlices = document.getElementById('btnClearSlices');
+        const padsContainer = document.getElementById('padsContainer');
+
+        // Inicializar Grid de 8 Pads
+        function initPads() {
+            padsContainer.innerHTML = '';
+            for (let i = 0; i < 8; i++) {
+                const pad = document.createElement('div');
+                pad.className = 'pad';
+                pad.dataset.index = i;
+                pad.innerHTML = `
+                    <span class="pad-num">[${i+1}]</span>
+                    <span class="pad-info">Slice ${i+1}</span>
+                `;
+                pad.addEventListener('click', () => triggerSlice(i));
+                padsContainer.appendChild(pad);
+            }
+        }
+        initPads();
+
+        // Soporte teclado QWERTY (Teclas 1 a 8)
+        window.addEventListener('keydown', (e) => {
+            const num = parseInt(e.key);
+            if (num >= 1 && num <= 8) {
+                triggerSlice(num - 1);
+                highlightPad(num - 1);
             }
         });
 
-        // 2. Cargar video mediante archivo local
-        uploader.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const fileURL = URL.createObjectURL(file);
-                videoElement.src = fileURL;
-                videoElement.load();
+        function highlightPad(index) {
+            const pads = padsContainer.querySelectorAll('.pad');
+            if (pads[index]) {
+                pads[index].classList.add('active');
+                setTimeout(() => pads[index].classList.remove('active'), 150);
+            }
+        }
+
+        // 1. Iniciar Grabación de Audio del Sistema / Pestaña
+        btnRecord.addEventListener('click', async () => {
+            try {
+                mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,
+                    audio: true
+                });
+
+                // Extraer solo la pista de audio
+                const audioTracks = mediaStream.getAudioTracks();
+                if (audioTracks.length === 0) {
+                    alert("No seleccionaste audio. Asegúrate de marcar la casilla 'Compartir audio de la pestaña/sistema'.");
+                    mediaStream.getTracks().forEach(t => t.stop());
+                    return;
+                }
+
+                const audioOnlyStream = new MediaStream(audioTracks);
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(audioOnlyStream);
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    
+                    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                    
+                    statusMsg.textContent = `Audio grabado con éxito (${audioBuffer.duration.toFixed(2)}s). Listo para trocear.`;
+                    slicePoints = [0, audioBuffer.duration];
+                    drawWaveform();
+                    autoSliceAudio();
+                };
+
+                mediaRecorder.start();
+                btnRecord.disabled = true;
+                btnStop.disabled = false;
+                btnStop.classList.add('recording');
+                statusMsg.textContent = "Grabando audio en curso... Reproduce tu fuente de sonido.";
+            } catch (err) {
+                console.error("Error al capturar audio:", err);
+                statusMsg.textContent = "Cancelado o error en permisos de captura.";
             }
         });
 
-        // 3. Inicializar Web Audio API al reproducir por primera vez (Requerimiento del navegador)
-        videoElement.addEventListener('play', () => {
-            if (!audioCtx) {
-                try {
-                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                    sourceNode = audioCtx.createMediaElementSource(videoElement);
-                    sourceNode.connect(audioCtx.destination);
-                } catch (e) {
-                    console.error("Error al conectar Web Audio API con el elemento de video:", e);
+        // Detener Grabación
+        btnStop.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaStream.getTracks().forEach(t => t.stop());
+            }
+            btnRecord.disabled = false;
+            btnStop.disabled = true;
+            btnStop.classList.remove('recording');
+        });
+
+        // 2. Dibujar Forma de Onda en Canvas
+        function drawWaveform() {
+            if (!audioBuffer) return;
+            
+            waveCanvas.width = waveCanvas.clientWidth;
+            waveCanvas.height = waveCanvas.clientHeight;
+            
+            const width = waveCanvas.width;
+            const height = waveCanvas.height;
+            const rawData = audioBuffer.getChannelData(0);
+            const step = Math.ceil(rawData.length / width);
+            const amp = height / 2;
+
+            canvasCtx.clearRect(0, 0, width, height);
+            canvasCtx.fillStyle = '#151814';
+            canvasCtx.fillRect(0, 0, width, height);
+
+            canvasCtx.lineWidth = 1;
+            canvasCtx.strokeStyle = '#53FA00';
+            canvasCtx.beginPath();
+
+            for (let i = 0; i < width; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const datum = rawData[(i * step) + j];
+                    if (datum < min) min = datum;
+                    if (datum > max) max = datum;
+                }
+                canvasCtx.moveTo(i, (1 + min) * amp);
+                canvasCtx.lineTo(i, (1 + max) * amp);
+            }
+            canvasCtx.stroke();
+
+            // Dibujar Líneas de Corte (Slices)
+            slicePoints.forEach(time => {
+                const x = (time / audioBuffer.duration) * width;
+                canvasCtx.strokeStyle = '#4279CD';
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(x, 0);
+                canvasCtx.lineTo(x, height);
+                canvasCtx.stroke();
+            });
+        }
+
+        // Clic en waveform para agregar corte manual
+        waveCanvas.addEventListener('click', (e) => {
+            if (!audioBuffer) return;
+            const rect = waveCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickedTime = (clickX / waveCanvas.width) * audioBuffer.duration;
+            
+            slicePoints.push(clickedTime);
+            slicePoints.sort((a, b) => a - b);
+            drawWaveform();
+        });
+
+        // 3. Auto-Trocear (Detección simple de picos / umbral)
+        btnAutoSlice.addEventListener('click', () => {
+            autoSliceAudio();
+        });
+
+        function autoSliceAudio() {
+            if (!audioBuffer) return;
+            const rawData = audioBuffer.getChannelData(0);
+            const duration = audioBuffer.duration;
+            let newSlices = [0];
+
+            const sampleRate = audioBuffer.sampleRate;
+            const windowSize = Math.floor(sampleRate * 0.1); // Ventanas de 100ms
+            
+            let threshold = 0.15; // Nivel de energía para considerar un golpe
+
+            for (let i = 0; i < rawData.length; i += windowSize) {
+                let sum = 0;
+                for (let j = 0; j < windowSize && (i + j) < rawData.length; j++) {
+                    sum += Math.abs(rawData[i + j]);
+                }
+                let avg = sum / windowSize;
+                if (avg > threshold) {
+                    let time = i / sampleRate;
+                    // Evitar cortes muy pegados (mínimo 0.2s de separación)
+                    if (time - newSlices[newSlices.length - 1] > 0.2) {
+                        newSlices.push(time);
+                    }
                 }
             }
-            if (audioCtx && audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-        }, { once: true });
 
-        // 4. Función de sampleo (CUE / Re-trigger al inicio)
-        cuePad.addEventListener('click', () => {
-            videoElement.currentTime = 0;
-            videoElement.play();
+            // Asegurar máximo 8 cortes para los pads
+            slicePoints = newSlices.slice(0, 8);
+            if (slicePoints.length < 2) slicePoints = [0, duration];
+            drawWaveform();
+            statusMsg.textContent = `Auto-troceo completo: ${slicePoints.length} Slices asignados a pads.`;
+        }
+
+        btnClearSlices.addEventListener('click', () => {
+            if (!audioBuffer) return;
+            slicePoints = [0, audioBuffer.duration];
+            drawWaveform();
         });
-    </script>
 
+        // 4. Disparar Slices mediante Pads
+        function triggerSlice(index) {
+            if (!audioBuffer || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            if (index >= slicePoints.length - 1) return; // Si no hay slice definido para este pad
+
+            const startTime = slicePoints[index];
+            const endTime = slicePoints[index + 1] || audioBuffer.duration;
+            const duration = endTime - startTime;
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioCtx.destination);
+            
+            source.start(audioCtx.currentTime, startTime, duration);
+            highlightPad(index);
+        }
+    </script>
 </body>
 </html>
