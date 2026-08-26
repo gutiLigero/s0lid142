@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sintetizador Web</title>
-  <!-- Importamos la librería de Tone.js -->
+  <title>Poly D Web Synth</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     body {
-      background-color: #0e0e11;
-      color: #f0f0f5;
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #121215;
+      color: #e0e0e6;
+      font-family: 'Courier New', Courier, monospace;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -18,105 +17,345 @@
       min-height: 100vh;
       margin: 0;
     }
-    .synth-container {
-      background: #1a1a22;
-      padding: 30px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+
+    /* Estilo inspiración Behringer Poly D / Minimoog con paneles de madera */
+    .synth-chassis {
+      background: #1a1a1f;
+      padding: 25px 35px;
+      border-radius: 10px;
+      border: 3px solid #2d2d35;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 2px 5px rgba(255,255,255,0.05);
+      position: relative;
+      max-width: 750px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* Laterales de madera sintética */
+    .synth-chassis::before, .synth-chassis::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 18px;
+      background: linear-gradient(90deg, #5c2c16, #3b1a0b);
+      border-radius: 4px;
+    }
+    .synth-chassis::before { left: -21px; }
+    .synth-chassis::after { right: -21px; }
+
+    .synth-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #2d2d35;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .synth-header h2 {
+      margin: 0;
+      color: #ff9900;
+      letter-spacing: 2px;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+    }
+
+    /* Paneles de control modulares */
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .module-box {
+      background: #151518;
+      border: 1px solid #2d2d35;
+      border-radius: 6px;
+      padding: 12px;
       text-align: center;
     }
+
+    .module-box h3 {
+      font-size: 0.75rem;
+      color: #ff9900;
+      margin: 0 0 10px 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .control-group {
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .control-group label {
+      margin-bottom: 4px;
+      color: #9d9dae;
+    }
+
+    select, input[type="range"] {
+      background: #23232b;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-family: monospace;
+      width: 100%;
+    }
+
+    input[type="range"] {
+      accent-color: #ff9900;
+      cursor: pointer;
+    }
+
+    /* Teclado Estilo Analógico (Incluyendo teclas negras) */
+    .keyboard-container {
+      background: #0b0b0d;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #2d2d35;
+      overflow-x: auto;
+    }
+
     .keyboard {
       display: flex;
-      gap: 8px;
-      margin-top: 20px;
-    }
-    .key {
-      width: 60px;
-      height: 180px;
-      background: #f0f0f5;
-      border-radius: 0 0 8px 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #333;
-      transition: background 0.1s;
-    }
-    .key:active {
-      background: #8c8c9e;
-      transform: translateY(2px);
-    }
-    .controls {
-      margin-top: 20px;
-      display: flex;
+      position: relative;
+      height: 140px;
       justify-content: center;
-      gap: 15px;
+      user-select: none;
     }
-    select, button.back-btn {
-      background: #262633;
-      color: white;
-      border: 1px solid #8c8c9e;
-      padding: 8px 12px;
-      border-radius: 8px;
+
+    .key {
+      position: relative;
       cursor: pointer;
+      border-radius: 0 0 4px 4px;
+      box-shadow: inset 0 -3px 2px rgba(0,0,0,0.3);
+      transition: background 0.05s;
+    }
+
+    .key.white {
+      width: 44px;
+      height: 140px;
+      background: #f0f0f5;
+      border: 1px solid #ccc;
+      z-index: 1;
+      margin-right: 2px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 8px;
+      color: #333;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .key.white:active, .key.white.active {
+      background: #d0d0d8;
+    }
+
+    .key.black {
+      width: 28px;
+      height: 85px;
+      background: #1e1e24;
+      border: 1px solid #000;
+      position: absolute;
+      z-index: 3;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 6px;
+      color: #aaa;
+      font-size: 0.6rem;
+      border-radius: 0 0 3px 3px;
+    }
+
+    .key.black:active, .key.black.active {
+      background: #33333d;
+    }
+
+    /* Posicionamiento específico para las teclas negras */
+    .kb-1 { left: 33px; }
+    .kb-2 { left: 79px; }
+    .kb-4 { left: 171px; }
+    .kb-5 { left: 217px; }
+    .kb-6 { left: 263px; }
+
+    .footer-controls {
+      margin-top: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .back-btn {
+      background: #23232b;
+      color: #ff9900;
+      border: 1px solid #ff9900;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+      text-decoration: none;
+      font-size: 0.8rem;
+    }
+    .back-btn:hover {
+      background: #ff9900;
+      color: #121215;
     }
   </style>
 </head>
 <body>
 
-  <div class="synth-container">
-    <h2>🎹 Web Synth</h2>
-    <p style="color: #8c8c9e;">Presiona las teclas para hacer ruido</p>
-    
-    <div class="controls">
-      <label>Onda: </label>
-      <select id="waveform">
-        <option value="square">Square (Retro)</option>
-        <option value="sawtooth">Sawtooth (Agresiva)</option>
-        <option value="triangle">Triangle (Suave)</option>
-        <option value="sine">Sine (Pura)</option>
-      </select>
+  <div class="synth-chassis">
+    <div class="synth-header">
+      <h2>Behringer Poly D (E뮬ación)</h2>
+      <span style="font-size: 0.75rem; color: #ff9900;">PARAPHONIC MODE</span>
     </div>
 
-    <div class="keyboard">
-      <!-- Asignamos las notas en el atributo data-note -->
-      <button class="key" data-note="C4">C</button>
-      <button class="key" data-note="D4">D</button>
-      <button class="key" data-note="E4">E</button>
-      <button class="key" data-note="F4">F</button>
-      <button class="key" data-note="G4">G</button>
-      <button class="key" data-note="A4">A</button>
-      <button class="key" data-note="B4">B</button>
-      <button class="key" data-note="C5">C</button>
+    <div class="modules-grid">
+      <div class="module-box">
+        <h3>Oscillator Source</h3>
+        <div class="control-group">
+          <label>Waveform</label>
+          <select id="waveform">
+            <option value="sawtooth">Sawtooth (Agresiva)</option>
+            <option value="square">Square (Pulso)</option>
+            <option value="triangle">Triangle (Suave)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="module-box">
+        <h3>Ladder Filter</h3>
+        <div class="control-group">
+          <label>Cutoff: <span id="cutoff-val">1200</span> Hz</label>
+          <input type="range" id="cutoff" min="100" max="8000" step="50" value="1200">
+        </div>
+        <div class="control-group">
+          <label>Resonance (Q)</label>
+          <input type="range" id="resonance" min="0" max="15" step="0.5" value="2">
+        </div>
+      </div>
+
+      <div class="module-box">
+        <h3>Analog Effects</h3>
+        <div class="control-group">
+          <label>Chorus Depth</label>
+          <input type="range" id="chorus-mix" min="0" max="1" step="0.05" value="0.4">
+        </div>
+        <div class="control-group">
+          <label>Reverb Space</label>
+          <input type="range" id="reverb-mix" min="0" max="1" step="0.05" value="0.3">
+        </div>
+      </div>
     </div>
-    
-    <br>
-    <a href="index.html"><button class="back-btn">← Volver al inicio</button></a>
+
+    <div class="keyboard-container">
+      <div class="keyboard">
+        <button class="key white" data-note="C4">C4</button>
+        <button class="key black kb-1" data-note="C#4">C#</button>
+        <button class="key white" data-note="D4">D4</button>
+        <button class="key black kb-2" data-note="D#4">D#</button>
+        <button class="key white" data-note="E4">E4</button>
+        <button class="key white" data-note="F4">F4</button>
+        <button class="key black kb-4" data-note="F#4">F#</button>
+        <button class="key white" data-note="G4">G4</button>
+        <button class="key black kb-5" data-note="G#4">G#</button>
+        <button class="key white" data-note="A4">A4</button>
+        <button class="key black kb-6" data-note="A#4">A#</button>
+        <button class="key white" data-note="B4">B4</button>
+        <button class="key white" data-note="C5">C5</button>
+      </div>
+    </div>
+
+    <div class="footer-controls">
+      <a href="index.html" class="back-btn">← Volver al inicio</a>
+      <span style="font-size: 0.7rem; color: #555;">Toca con el ratón o teclado de PC (A-K)</span>
+    </div>
   </div>
 
   <script>
-    // 1. Configuramos los efectos (Reverb y Filtro para un sonido más profundo)
-    const reverb = new Tone.Reverb(2.5).toDestination();
-    const filter = new Tone.Filter(1200, "lowpass").connect(reverb);
+    // 1. Configuración de Cadena de Efectos Análogos (Reverb + Chorus Estéreo estilo BDD)
+    const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 }).toDestination();
+    const chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0.4 }).connect(reverb);
     
-    // 2. Creamos el Sintetizador Polifónico y lo conectamos a los efectos
+    // Filtro estilo Moog Ladder (Lowpass con resonancia cálida)
+    const filter = new Tone.Filter({
+      frequency: 1200,
+      type: "lowpass",
+      rolloff: -24, // Característico filtro de 4 polos (24dB)
+      Q: 2
+    }).connect(chorus);
+    
+    // Sintetizador Polifónico con envolvente clásica de sintetizador analógico
     const synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "square" },
-      envelope: { attack: 0.05, decay: 0.2, sustain: 0.5, release: 1 }
+      oscillator: { type: "sawtooth" },
+      envelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 0.8 }
     }).connect(filter);
 
-    // 3. Lógica para cambiar el tipo de onda con el selector
+    // 2. Mapeo de controles de la interfaz
     document.getElementById("waveform").addEventListener("change", (e) => {
       synth.set({ oscillator: { type: e.target.value } });
     });
 
-    // 4. Lógica para que las teclas suenen al hacer clic
+    const cutoffInput = document.getElementById("cutoff");
+    const cutoffVal = document.getElementById("cutoff-val");
+    cutoffInput.addEventListener("input", (e) => {
+      const val = e.target.value;
+      filter.frequency.rampTo(val, 0.05);
+      cutoffVal.innerText = val;
+    });
+
+    document.getElementById("resonance").addEventListener("input", (e) => {
+      filter.Q.value = parseFloat(e.target.value);
+    });
+
+    document.getElementById("chorus-mix").addEventListener("input", (e) => {
+      chorus.wet.value = parseFloat(e.target.value);
+    });
+
+    document.getElementById("reverb-mix").addEventListener("input", (e) => {
+      reverb.wet.value = parseFloat(e.target.value);
+    });
+
+    // 3. Funciones de activación de notas con soporte visual
+    async function playNote(note, element) {
+      await Tone.start();
+      synth.triggerAttackRelease(note, "4n");
+      
+      if(element) {
+        element.classList.add("active");
+        setTimeout(() => element.classList.remove("active"), 150);
+      }
+    }
+
+    // Eventos de clic en el teclado virtual
     document.querySelectorAll(".key").forEach(key => {
-      key.addEventListener("mousedown", async () => {
-        await Tone.start(); // El navegador exige esto la primera vez
+      key.addEventListener("mousedown", () => {
         const note = key.getAttribute("data-note");
-        synth.triggerAttackRelease(note, "8n");
+        playNote(note, key);
       });
+    });
+
+    // 4. Soporte opcional para tocar con el teclado de la computadora
+    const keyMap = {
+      'a': 'C4', 'w': 'C#4', 's': 'D4', 'e': 'D#4', 'd': 'E4',
+      'f': 'F4', 't': 'F#4', 'g': 'G4', 'y': 'G#4', 'h': 'A4',
+      'u': 'A#4', 'j': 'B4', 'k': 'C5'
+    };
+
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      const note = keyMap[e.key.toLowerCase()];
+      if (note) {
+        const keyElement = document.querySelector(`[data-note="${note}"]`);
+        playNote(note, keyElement);
+      }
     });
   </script>
 </body>
