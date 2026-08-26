@@ -641,7 +641,9 @@ const lcdMode = document.getElementById('lcdMode');
 /* ---------- Audio helpers ---------- */
 function ensureAudioContext() {
     if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // latencyHint 'interactive' prioriza baja latencia sobre estabilidad,
+        // correcto para un instrumento tocado en tiempo real (pads).
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
         masterGain = audioCtx.createGain();
         masterGain.gain.value = parseFloat(volRange.value);
         masterGain.connect(audioCtx.destination);
@@ -649,6 +651,14 @@ function ensureAudioContext() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     return audioCtx;
 }
+
+// Los navegadores suspenden el AudioContext al perder foco/pestaña oculta;
+// lo reanudamos automáticamente al volver para que los pads no se queden mudos.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+});
 
 volRange.addEventListener('input', () => {
     if (masterGain) masterGain.gain.value = parseFloat(volRange.value);
@@ -658,7 +668,13 @@ loopToggle.addEventListener('change', updateLcd);
 
 async function loadAudioFromArrayBuffer(arrayBuffer) {
     ensureAudioContext();
-    audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    // decodeAudioData "destruye" (neuters) el ArrayBuffer que recibe; lo clonamos
+    // antes por si el llamador necesita reutilizar los bytes originales (grabación).
+    const decoded = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+    // Si había voces sonando del sample anterior, las cortamos: si no, quedan
+    // huérfanas referenciando un buffer que ya no existe en la UI/slicePoints.
+    stopAllVoices();
+    audioBuffer = decoded;
     slicePoints = [0, audioBuffer.duration];
     resetZoom();
     drawWaveform();
@@ -703,11 +719,18 @@ btnRecord.addEventListener('click', async () => {
         };
 
         audioTracks[0].addEventListener('ended', () => {
+            // El usuario detuvo la captura desde el panel nativo del navegador
+            // ("Dejar de compartir"). Hay que parar TODAS las pistas (incluida
+            // la de vídeo, que seguimos reteniendo aunque no la usemos) o el
+            // indicador de "compartiendo pantalla" queda encendido indefinidamente.
             if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+            if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
             resetRecordButtons();
         });
 
-        mediaRecorder.start();
+        // timeslice de 1s: ondataavailable se dispara periódicamente en vez de
+        // solo al final, evitando acumular una grabación larga entera en RAM.
+        mediaRecorder.start(1000);
         btnRecord.disabled = true;
         btnStop.disabled = false;
         btnRecord.classList.add('recording');
@@ -721,6 +744,7 @@ btnRecord.addEventListener('click', async () => {
 btnStop.addEventListener('click', () => {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
     if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    mediaStream = null;
     resetRecordButtons();
 });
 
