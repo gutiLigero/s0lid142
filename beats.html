@@ -14,6 +14,7 @@
       --brand-blue: #4279CD;
       --brand-green: #408C48;
       --accent-neon: #53FA00;
+      --accent-alert: #ff4b4b;
       --border-subtle: rgba(182, 191, 177, 0.18);
     }
 
@@ -42,15 +43,19 @@
     }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       margin-bottom: 24px;
       border-bottom: 1px solid var(--border-subtle);
       padding-bottom: 16px;
     }
 
-    .title-area h2 { font-weight: 400; letter-spacing: -0.5px; }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    h2 { font-weight: 400; letter-spacing: -0.5px; }
     
     .midi-status {
       font-size: 0.75rem;
@@ -66,13 +71,45 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background-color: red; /* Cambiará a verde si detecta MIDI */
-      box-shadow: 0 0 5px red;
+      background-color: var(--accent-alert); 
+      box-shadow: 0 0 5px var(--accent-alert);
     }
 
     .midi-led.active {
       background-color: var(--accent-neon);
       box-shadow: 0 0 8px var(--accent-neon);
+    }
+
+    .header-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Botón de Mapeo */
+    .learn-btn {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--text-muted);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .learn-btn.active {
+      background: rgba(83, 250, 0, 0.1);
+      color: var(--accent-neon);
+      border-color: var(--accent-neon);
+      box-shadow: 0 0 10px rgba(83, 250, 0, 0.2);
+    }
+
+    #midi-debug {
+      font-size: 0.7rem;
+      color: var(--brand-blue);
     }
 
     /* Grid de Pads (4x2) */
@@ -89,7 +126,8 @@
       border-radius: 6px;
       cursor: pointer;
       display: flex;
-      align-items: flex-end;
+      flex-direction: column;
+      justify-content: flex-end;
       padding: 8px;
       font-size: 0.7rem;
       color: var(--text-muted);
@@ -97,14 +135,37 @@
       font-weight: 600;
       transition: all 0.05s ease;
       user-select: none;
+      position: relative;
+    }
+
+    .pad .midi-hint {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 0.6rem;
+      color: var(--brand-blue);
+      font-family: monospace;
+      opacity: 0.7;
     }
 
     .pad:active, .pad.triggered {
       background: var(--brand-blue);
-      border-color: var(--accent-neon);
+      border-color: var(--text-main);
       color: white;
       transform: scale(0.96);
       box-shadow: 0 0 15px rgba(66, 121, 205, 0.5);
+    }
+
+    .pad.binding {
+      background: rgba(255, 75, 75, 0.1);
+      border-color: var(--accent-alert);
+      color: white;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { box-shadow: 0 0 5px var(--accent-alert); }
+      to { box-shadow: 0 0 15px var(--accent-alert); }
     }
 
     .back-btn {
@@ -125,25 +186,45 @@
 
   <div class="machine-container">
     <header>
-      <div class="title-area">
+      <div class="header-top">
         <h2>WebMPC // MIDI</h2>
+        <div class="midi-status">
+          <div class="midi-led" id="midi-led"></div>
+          <span id="midi-text">MIDI OFF</span>
+        </div>
       </div>
-      <div class="midi-status">
-        <div class="midi-led" id="midi-led"></div>
-        <span id="midi-text">MIDI OFF</span>
+      <div class="header-bottom">
+        <button id="learn-btn" class="learn-btn">🔗 Mapear Pads</button>
+        <span id="midi-debug">Listo.</span>
       </div>
     </header>
 
-    <div class="pad-grid">
-      <!-- Mapeados al estándar MIDI de baterías (36=Kick, 38=Snare, etc.) -->
-      <div class="pad" data-midi="36" data-sound="kick">Kick (C1)</div>
-      <div class="pad" data-midi="38" data-sound="snare">Snare (D1)</div>
-      <div class="pad" data-midi="42" data-sound="hihatC">Hat C. (F#1)</div>
-      <div class="pad" data-midi="46" data-sound="hihatO">Hat O. (A#1)</div>
-      <div class="pad" data-midi="45" data-sound="tomL">Tom L (A1)</div>
-      <div class="pad" data-midi="50" data-sound="tomH">Tom H (D2)</div>
-      <div class="pad" data-midi="39" data-sound="clap">Clap (D#1)</div>
-      <div class="pad" data-midi="49" data-sound="crash">Crash (C#2)</div>
+    <div class="pad-grid" id="pads-container">
+      <!-- Los data-midi iniciales (se sobreescribirán si hay datos guardados) -->
+      <div class="pad" data-midi="36" data-sound="kick" id="pad-kick">
+        <span class="midi-hint">[36]</span>Kick
+      </div>
+      <div class="pad" data-midi="38" data-sound="snare" id="pad-snare">
+        <span class="midi-hint">[38]</span>Snare
+      </div>
+      <div class="pad" data-midi="42" data-sound="hihatC" id="pad-hihatC">
+        <span class="midi-hint">[42]</span>Hat C.
+      </div>
+      <div class="pad" data-midi="46" data-sound="hihatO" id="pad-hihatO">
+        <span class="midi-hint">[46]</span>Hat O.
+      </div>
+      <div class="pad" data-midi="45" data-sound="tomL" id="pad-tomL">
+        <span class="midi-hint">[45]</span>Tom L
+      </div>
+      <div class="pad" data-midi="50" data-sound="tomH" id="pad-tomH">
+        <span class="midi-hint">[50]</span>Tom H
+      </div>
+      <div class="pad" data-midi="39" data-sound="clap" id="pad-clap">
+        <span class="midi-hint">[39]</span>Clap
+      </div>
+      <div class="pad" data-midi="49" data-sound="crash" id="pad-crash">
+        <span class="midi-hint">[49]</span>Crash
+      </div>
     </div>
   </div>
   
@@ -151,8 +232,6 @@
 
   <script>
     // --- 1. MOTOR DE AUDIO (Tone.js) ---
-    // Nota para el futuro: Si quieres usar tus propios samples wav, 
-    // cambias esto por: const kick = new Tone.Player("ruta/kick.wav").toDestination();
     const synths = {
       kick: new Tone.MembraneSynth().toDestination(),
       snare: new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0 } }).toDestination(),
@@ -164,29 +243,78 @@
       crash: new Tone.MetalSynth({ frequency: 300, envelope: { attack: 0.001, decay: 1.5, release: 0.2 }, harmonicity: 4, modulationIndex: 40, resonance: 2000 }).toDestination()
     };
 
-    // Función para disparar el sonido y la animación visual
     async function playSound(padElement) {
       await Tone.start();
       const soundType = padElement.getAttribute('data-sound');
-      
-      // Reproducir sonido
       if (soundType === 'kick' || soundType === 'tomL' || soundType === 'tomH') {
         synths[soundType].triggerAttackRelease(soundType === 'kick' ? "C1" : soundType === 'tomL' ? "G1" : "C2", "8n");
       } else {
         synths[soundType].triggerAttackRelease("16n");
       }
-
-      // Animación del pad
       padElement.classList.add('triggered');
       setTimeout(() => padElement.classList.remove('triggered'), 100);
     }
 
-    // Eventos de clic con el ratón
-    document.querySelectorAll('.pad').forEach(pad => {
-      pad.addEventListener('mousedown', () => playSound(pad));
+    // --- 2. LÓGICA DE MAPEO (MIDI LEARN) Y MEMORIA ---
+    let learnMode = false;
+    let padToBind = null;
+
+    // Cargar mapeo guardado previamente
+    function loadSavedMidiMap() {
+      const savedMap = JSON.parse(localStorage.getItem('s0lid142_midi_map'));
+      if (savedMap) {
+        document.querySelectorAll('.pad').forEach(pad => {
+          const sound = pad.getAttribute('data-sound');
+          if (savedMap[sound]) {
+            pad.setAttribute('data-midi', savedMap[sound]);
+            pad.querySelector('.midi-hint').innerText = `[${savedMap[sound]}]`;
+          }
+        });
+      }
+    }
+    loadSavedMidiMap();
+
+    // Botón para activar/desactivar el modo de aprendizaje
+    const learnBtn = document.getElementById('learn-btn');
+    learnBtn.addEventListener('click', () => {
+      learnMode = !learnMode;
+      learnBtn.classList.toggle('active', learnMode);
+      
+      if (learnMode) {
+        learnBtn.innerText = "Selecciona un pad web 👇";
+      } else {
+        learnBtn.innerText = "🔗 Mapear Pads";
+        if (padToBind) padToBind.classList.remove('binding');
+        padToBind = null;
+      }
     });
 
-    // --- 2. MOTOR WebMIDI ---
+    // Clics en los pads (Con ratón o para seleccionarlos en modo mapeo)
+    document.querySelectorAll('.pad').forEach(pad => {
+      pad.addEventListener('mousedown', () => {
+        if (learnMode) {
+          // Deseleccionar cualquier otro pad
+          document.querySelectorAll('.pad').forEach(p => p.classList.remove('binding'));
+          // Seleccionar este
+          padToBind = pad;
+          pad.classList.add('binding');
+          learnBtn.innerText = "Toca tu controlador 🎹";
+        } else {
+          playSound(pad);
+        }
+      });
+    });
+
+    // Guardar el mapa actual en la memoria del navegador
+    function saveMidiMap() {
+      const currentMap = {};
+      document.querySelectorAll('.pad').forEach(pad => {
+        currentMap[pad.getAttribute('data-sound')] = pad.getAttribute('data-midi');
+      });
+      localStorage.setItem('s0lid142_midi_map', JSON.stringify(currentMap));
+    }
+
+    // --- 3. MOTOR WebMIDI ---
     if (navigator.requestMIDIAccess) {
       navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
     }
@@ -195,7 +323,6 @@
       const led = document.getElementById('midi-led');
       const text = document.getElementById('midi-text');
       
-      // Si encuentra dispositivos MIDI
       if(midiAccess.inputs.size > 0) {
         led.classList.add('active');
         text.innerText = "MIDI ON";
@@ -205,7 +332,6 @@
         input.onmidimessage = getMIDIMessage;
       }
       
-      // Escuchar cuando se conecta o desconecta hardware
       midiAccess.onstatechange = (e) => {
         if (e.port.type === "input") {
           led.classList.toggle('active', e.port.state === "connected");
@@ -215,20 +341,38 @@
     }
 
     function onMIDIFailure() {
-      console.log('No se pudo acceder a los dispositivos MIDI.');
+      document.getElementById('midi-debug').innerText = "Error acceso MIDI.";
     }
 
     function getMIDIMessage(message) {
       const command = message.data[0];
       const note = message.data[1];
-      const velocity = (message.data.length > 2) ? message.data[2] : 0; // Volumen (no usado aquí, pero útil)
+      const velocity = (message.data.length > 2) ? message.data[2] : 0;
 
-      // command 144 es Note On. Si velocity > 0, tocamos la nota.
-      if (command === 144 && velocity > 0) {
-        // Buscamos el pad que tenga este número MIDI asignado
-        const padToTrigger = document.querySelector(`.pad[data-midi="${note}"]`);
-        if (padToTrigger) {
-          playSound(padToTrigger);
+      // Monitor MIDI en pantalla
+      document.getElementById('midi-debug').innerText = `Cmd: ${command} | Nota: ${note}`;
+
+      // Aceptar Note On en CUALQUIER canal (comandos 144 al 159)
+      const isNoteOn = (command >= 144 && command <= 159);
+
+      if (isNoteOn && velocity > 0) {
+        
+        // ESTAMOS EN MODO MAPEO
+        if (learnMode && padToBind) {
+          padToBind.setAttribute('data-midi', note);
+          padToBind.querySelector('.midi-hint').innerText = `[${note}]`;
+          padToBind.classList.remove('binding');
+          padToBind = null;
+          learnBtn.innerText = "Asignado ✅ Selecciona otro pad";
+          saveMidiMap(); // Guardar en memoria local
+        } 
+        
+        // ESTAMOS TOCANDO NORMALMENTE
+        else {
+          const padToTrigger = document.querySelector(`.pad[data-midi="${note}"]`);
+          if (padToTrigger) {
+            playSound(padToTrigger);
+          }
         }
       }
     }
