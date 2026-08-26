@@ -118,6 +118,12 @@ body {
     .deck { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 480px) {
+    .wave-row { flex-direction: row; }
+    .zoom-block { width: 56px; }
+    .knob { width: 36px; height: 36px; }
+}
+
 .left-col, .right-col {
     background: var(--panel);
     border-radius: 8px;
@@ -210,9 +216,16 @@ button:focus-visible, input:focus-visible, .pad:focus-visible, .bank-btn:focus-v
 
 input[type="range"] { accent-color: var(--lcd-amber); cursor: pointer; }
 
-/* Waveform */
+/* Waveform + zoom */
+.wave-row {
+    display: flex;
+    gap: 10px;
+    align-items: stretch;
+}
+
 .waveform-container {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     height: 110px;
     background: #000;
     border: 2px solid #000;
@@ -234,6 +247,84 @@ canvas { width: 100%; height: 100%; display: block; }
     padding: 2px 5px;
     border-radius: 3px;
     pointer-events: none;
+}
+
+/* Potenciómetro de zoom */
+.zoom-block {
+    width: 66px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: linear-gradient(180deg, #2c2c2c, #202020);
+    border: 1px solid #141414;
+    border-radius: 6px;
+    padding: 6px 4px;
+}
+
+.knob {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #565656, #2a2a2a 75%);
+    box-shadow: 0 3px 0 #0c0c0c, inset 0 1px 1px rgba(255,255,255,0.15);
+    cursor: ns-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+    user-select: none;
+    position: relative;
+}
+
+.knob:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.knob-dial {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    position: relative;
+    transform: rotate(-135deg); /* valor inicial: mínimo */
+    transition: transform 0.03s linear;
+}
+
+.knob-indicator {
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    width: 3px;
+    height: 14px;
+    background: var(--lcd-amber);
+    border-radius: 2px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 4px rgba(255,176,0,0.7);
+}
+
+.knob-value {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.68rem;
+    color: var(--lcd-amber);
+}
+
+.knob-caption {
+    font-size: 0.55rem;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+}
+
+/* Minimapa de posición */
+.minimap {
+    width: 100%;
+    height: 26px;
+    background: #000;
+    border: 1px solid #000;
+    border-radius: 3px;
+    cursor: pointer;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
 }
 
 /* Bancos */
@@ -411,13 +502,27 @@ footer {
             </div>
 
             <div class="section-label">Waveform</div>
-            <div class="waveform-container" id="waveformContainer">
-                <canvas id="waveCanvas"></canvas>
-                <div class="wave-hint">Clic = corte · Clic&nbsp;der. = borrar</div>
+            <div class="wave-row">
+                <div class="waveform-container" id="waveformContainer">
+                    <canvas id="waveCanvas"></canvas>
+                    <div class="wave-hint">Clic = corte · Clic&nbsp;der. = borrar · Arrastra = mover · Rueda = zoom</div>
+                </div>
+                <div class="zoom-block">
+                    <div class="knob" id="zoomKnob" tabindex="0" role="slider"
+                         aria-label="Zoom de la waveform" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div class="knob-dial">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <div class="knob-value" id="zoomValue">1.0x</div>
+                    <div class="knob-caption">ZOOM</div>
+                </div>
             </div>
+            <canvas id="minimapCanvas" class="minimap" title="Mini-mapa: clic para saltar a esa posición"></canvas>
             <div class="btn-row">
                 <button class="mpc-btn small" id="btnAutoSlice">AUTO CHOP</button>
                 <button class="mpc-btn small warn" id="btnClearSlices">LIMPIAR</button>
+                <button class="mpc-btn small" id="btnZoomReset">RESET ZOOM</button>
                 <div class="sens-wrap">
                     <label for="sensRange" class="mini-label">SENS.</label>
                     <input type="range" id="sensRange" min="1" max="9" step="1" value="5">
@@ -449,7 +554,7 @@ footer {
                 </label>
                 <button class="mpc-btn warn small" id="btnStopAll">PANIC (Esc)</button>
             </div>
-            <div class="status-text">Pads con teclas 1234 / QWER / ASDF / ZXCV según el banco activo. Icono ⬇ exporta el slice en WAV.</div>
+            <div class="status-text">Pads con teclas 1234 / QWER / ASDF / ZXCV según el banco activo. Icono ⬇ exporta el slice en WAV. Potenciómetro de ZOOM: arrastra vertical o usa ↑↓.</div>
         </div>
 
     </div>
@@ -492,6 +597,20 @@ let currentBank = 0;             // 0..3
 let activeVoices = new Array(MAX_SLICES).fill(null);
 let resizeRAF = null;
 
+/* Zoom / pan del waveform */
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 40;
+let zoomLevel = 1;               // 1 = vista completa
+let viewOffsetSec = 0;           // inicio (segundos) de la ventana visible
+let isDraggingWave = false;
+let waveDragStartX = 0;
+let waveDragStartOffset = 0;
+let waveDragMoved = false;
+let isDraggingKnob = false;
+let knobDragStartY = 0;
+let knobDragStartNorm = 0;
+let knobNorm = 0;                // 0..1, mapeado exponencialmente a zoomLevel
+
 /* ---------- DOM ---------- */
 const btnRecord = document.getElementById('btnRecord');
 const btnStop = document.getElementById('btnStop');
@@ -507,6 +626,11 @@ const btnStopAll = document.getElementById('btnStopAll');
 const loopToggle = document.getElementById('loopToggle');
 const volRange = document.getElementById('volRange');
 const bankRow = document.getElementById('bankRow');
+const zoomKnob = document.getElementById('zoomKnob');
+const zoomValueEl = document.getElementById('zoomValue');
+const btnZoomReset = document.getElementById('btnZoomReset');
+const minimapCanvas = document.getElementById('minimapCanvas');
+const minimapCtx = minimapCanvas.getContext('2d');
 
 const lcdStatus = document.getElementById('lcdStatus');
 const lcdBank = document.getElementById('lcdBank');
@@ -536,7 +660,9 @@ async function loadAudioFromArrayBuffer(arrayBuffer) {
     ensureAudioContext();
     audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
     slicePoints = [0, audioBuffer.duration];
+    resetZoom();
     drawWaveform();
+    drawMinimap();
     autoSliceAudio();
 }
 
@@ -648,6 +774,22 @@ function resizeCanvasToDisplaySize() {
     }
 }
 
+function getViewWindow() {
+    const total = audioBuffer.duration;
+    const viewDur = total / zoomLevel;
+    const maxOffset = Math.max(0, total - viewDur);
+    viewOffsetSec = Math.max(0, Math.min(maxOffset, viewOffsetSec));
+    return { start: viewOffsetSec, end: viewOffsetSec + viewDur, dur: viewDur };
+}
+
+function timeToX(time, view, width) {
+    return ((time - view.start) / view.dur) * width;
+}
+
+function xToTime(x, view, width) {
+    return view.start + (x / width) * view.dur;
+}
+
 function drawWaveform() {
     if (!audioBuffer) return;
     resizeCanvasToDisplaySize();
@@ -655,7 +797,12 @@ function drawWaveform() {
     const width = waveCanvas.width;
     const height = waveCanvas.height;
     const rawData = audioBuffer.getChannelData(0);
-    const step = Math.max(1, Math.ceil(rawData.length / width));
+    const sampleRate = audioBuffer.sampleRate;
+    const view = getViewWindow();
+    const startSample = Math.floor(view.start * sampleRate);
+    const endSample = Math.min(rawData.length, Math.ceil(view.end * sampleRate));
+    const visibleSamples = Math.max(1, endSample - startSample);
+    const step = Math.max(1, Math.ceil(visibleSamples / width));
     const amp = height / 2;
 
     canvasCtx.clearRect(0, 0, width, height);
@@ -667,19 +814,22 @@ function drawWaveform() {
     canvasCtx.beginPath();
     for (let i = 0; i < width; i++) {
         let min = 1.0, max = -1.0;
-        const start = i * step;
-        for (let j = 0; j < step && (start + j) < rawData.length; j++) {
+        const start = startSample + i * step;
+        for (let j = 0; j < step && (start + j) < endSample; j++) {
             const d = rawData[start + j];
             if (d < min) min = d;
             if (d > max) max = d;
         }
+        if (min > max) { min = 0; max = 0; }
         canvasCtx.moveTo(i, (1 + min) * amp);
         canvasCtx.lineTo(i, (1 + max) * amp);
     }
     canvasCtx.stroke();
 
+    // Líneas de corte visibles en la ventana actual
     slicePoints.forEach((time, idx) => {
-        const x = (time / audioBuffer.duration) * width;
+        if (time < view.start || time > view.end) return;
+        const x = timeToX(time, view, width);
         canvasCtx.strokeStyle = idx === 0 ? 'rgba(63,127,209,0.35)' : '#3f7fd1';
         canvasCtx.beginPath();
         canvasCtx.moveTo(x, 0);
@@ -687,38 +837,70 @@ function drawWaveform() {
         canvasCtx.stroke();
     });
 
-    // Marca los límites de banco activo con una franja sutil
+    // Franja del banco activo
     const bankStartIdx = currentBank * PADS_PER_BANK;
     const bankEndIdx = Math.min(slicePoints.length - 1, bankStartIdx + PADS_PER_BANK);
     if (bankStartIdx < slicePoints.length - 1) {
-        const xStart = (slicePoints[bankStartIdx] / audioBuffer.duration) * width;
-        const xEnd = (slicePoints[bankEndIdx] / audioBuffer.duration) * width;
-        canvasCtx.fillStyle = 'rgba(255,176,0,0.07)';
-        canvasCtx.fillRect(xStart, 0, xEnd - xStart, height);
+        const tStart = slicePoints[bankStartIdx];
+        const tEnd = slicePoints[bankEndIdx];
+        if (tEnd >= view.start && tStart <= view.end) {
+            const xStart = timeToX(Math.max(tStart, view.start), view, width);
+            const xEnd = timeToX(Math.min(tEnd, view.end), view, width);
+            canvasCtx.fillStyle = 'rgba(255,176,0,0.07)';
+            canvasCtx.fillRect(xStart, 0, xEnd - xStart, height);
+        }
     }
+
+    drawMinimapViewport();
 }
 
 window.addEventListener('resize', () => {
     if (resizeRAF) cancelAnimationFrame(resizeRAF);
-    resizeRAF = requestAnimationFrame(drawWaveform);
+    resizeRAF = requestAnimationFrame(() => { drawWaveform(); drawMinimap(); });
 });
 
-waveCanvas.addEventListener('click', (e) => {
-    if (!audioBuffer) return;
+/* Clic = añadir corte · Arrastrar = paneo · Rueda = zoom/paneo */
+waveCanvas.addEventListener('mousedown', (e) => {
+    if (!audioBuffer || e.button !== 0) return;
+    isDraggingWave = true;
+    waveDragMoved = false;
+    waveDragStartX = e.clientX;
+    waveDragStartOffset = viewOffsetSec;
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!isDraggingWave || !audioBuffer) return;
     const rect = waveCanvas.getBoundingClientRect();
-    const clickedTime = ((e.clientX - rect.left) / rect.width) * audioBuffer.duration;
-    slicePoints.push(clickedTime);
-    slicePoints = [...new Set(slicePoints.map(t => Math.round(t * 1000) / 1000))].sort((a, b) => a - b);
-    if (slicePoints.length > MAX_SLICES + 1) slicePoints = slicePoints.slice(0, MAX_SLICES + 1);
+    const dxPx = e.clientX - waveDragStartX;
+    if (Math.abs(dxPx) > 3) waveDragMoved = true;
+    const view = getViewWindow();
+    const dxSec = -(dxPx / rect.width) * view.dur;
+    viewOffsetSec = waveDragStartOffset + dxSec;
     drawWaveform();
-    renderPads();
+});
+
+window.addEventListener('mouseup', (e) => {
+    if (!isDraggingWave) return;
+    isDraggingWave = false;
+    if (!waveDragMoved && audioBuffer) {
+        // fue un clic real, no un arrastre: añadir corte
+        const rect = waveCanvas.getBoundingClientRect();
+        const view = getViewWindow();
+        const clickedTime = xToTime(e.clientX - rect.left, view, rect.width);
+        slicePoints.push(clickedTime);
+        slicePoints = [...new Set(slicePoints.map(t => Math.round(t * 1000) / 1000))].sort((a, b) => a - b);
+        if (slicePoints.length > MAX_SLICES + 1) slicePoints = slicePoints.slice(0, MAX_SLICES + 1);
+        drawWaveform();
+        renderPads();
+    }
 });
 
 waveCanvas.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     if (!audioBuffer || slicePoints.length <= 2) return;
     const rect = waveCanvas.getBoundingClientRect();
-    const clickedTime = ((e.clientX - rect.left) / rect.width) * audioBuffer.duration;
+    const view = getViewWindow();
+    const clickedTime = xToTime(e.clientX - rect.left, view, rect.width);
     let nearestIdx = 1, nearestDist = Infinity;
     for (let i = 1; i < slicePoints.length; i++) {
         const d = Math.abs(slicePoints[i] - clickedTime);
@@ -728,6 +910,190 @@ waveCanvas.addEventListener('contextmenu', (e) => {
     drawWaveform();
     renderPads();
 });
+
+waveCanvas.addEventListener('wheel', (e) => {
+    if (!audioBuffer) return;
+    e.preventDefault();
+    if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        // paneo horizontal
+        const view = getViewWindow();
+        const delta = (e.deltaX || e.deltaY) * (view.dur / 400);
+        viewOffsetSec += delta;
+        drawWaveform();
+    } else {
+        // zoom centrado en el cursor
+        const rect = waveCanvas.getBoundingClientRect();
+        const view = getViewWindow();
+        const cursorTime = xToTime(e.clientX - rect.left, view, rect.width);
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        setZoomLevel(zoomLevel * factor, cursorTime);
+    }
+}, { passive: false });
+
+/* ---------- Zoom: nivel + knob ---------- */
+function normToZoom(norm) {
+    // mapeo exponencial: sensación de "potenciómetro" más fina en valores bajos
+    return ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, norm);
+}
+function zoomToNorm(zoom) {
+    return Math.log(zoom / ZOOM_MIN) / Math.log(ZOOM_MAX / ZOOM_MIN);
+}
+
+function setZoomLevel(newZoom, anchorTime) {
+    if (!audioBuffer) return;
+    const clamped = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, newZoom));
+    const prevView = getViewWindow();
+    const anchor = anchorTime !== undefined ? anchorTime : (prevView.start + prevView.dur / 2);
+    const anchorRatio = prevView.dur > 0 ? (anchor - prevView.start) / prevView.dur : 0.5;
+
+    zoomLevel = clamped;
+    const newDur = audioBuffer.duration / zoomLevel;
+    viewOffsetSec = anchor - anchorRatio * newDur;
+
+    knobNorm = zoomToNorm(zoomLevel);
+    updateKnobVisual();
+    zoomValueEl.textContent = `${zoomLevel.toFixed(1)}x`;
+    drawWaveform();
+}
+
+function resetZoom() {
+    zoomLevel = 1;
+    viewOffsetSec = 0;
+    knobNorm = 0;
+    updateKnobVisual();
+    zoomValueEl.textContent = '1.0x';
+}
+
+btnZoomReset.addEventListener('click', () => setZoomLevel(1, 0));
+
+function updateKnobVisual() {
+    const deg = -135 + knobNorm * 270; // -135deg (min) .. +135deg (max)
+    zoomKnob.querySelector('.knob-dial').style.transform = `rotate(${deg}deg)`;
+    zoomKnob.setAttribute('aria-valuenow', Math.round(knobNorm * 100));
+}
+
+zoomKnob.addEventListener('mousedown', (e) => {
+    isDraggingKnob = true;
+    knobDragStartY = e.clientY;
+    knobDragStartNorm = knobNorm;
+    e.preventDefault();
+});
+
+window.addEventListener('mousemove', (e) => {
+    if (!isDraggingKnob) return;
+    const dy = knobDragStartY - e.clientY; // arrastrar hacia arriba = subir valor
+    const delta = dy / 180; // 180px de recorrido = rango completo
+    knobNorm = Math.max(0, Math.min(1, knobDragStartNorm + delta));
+    setZoomLevel(normToZoom(knobNorm));
+});
+
+window.addEventListener('mouseup', () => { isDraggingKnob = false; });
+
+zoomKnob.addEventListener('keydown', (e) => {
+    if (!audioBuffer) return;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+        knobNorm = Math.min(1, knobNorm + 0.03);
+        setZoomLevel(normToZoom(knobNorm));
+        e.preventDefault();
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+        knobNorm = Math.max(0, knobNorm - 0.03);
+        setZoomLevel(normToZoom(knobNorm));
+        e.preventDefault();
+    }
+});
+
+zoomKnob.addEventListener('dblclick', () => setZoomLevel(1, 0));
+
+/* Soporte táctil básico para el knob (drag vertical) */
+zoomKnob.addEventListener('touchstart', (e) => {
+    isDraggingKnob = true;
+    knobDragStartY = e.touches[0].clientY;
+    knobDragStartNorm = knobNorm;
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+    if (!isDraggingKnob) return;
+    const dy = knobDragStartY - e.touches[0].clientY;
+    const delta = dy / 180;
+    knobNorm = Math.max(0, Math.min(1, knobDragStartNorm + delta));
+    setZoomLevel(normToZoom(knobNorm));
+}, { passive: true });
+
+window.addEventListener('touchend', () => { isDraggingKnob = false; });
+
+/* ---------- Minimapa (con caché de la onda base para arrastres fluidos) ---------- */
+let minimapBaseCanvas = null;
+
+function drawMinimap() {
+    if (!audioBuffer) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = minimapCanvas.getBoundingClientRect();
+    minimapCanvas.width = Math.max(1, Math.round(rect.width * dpr));
+    minimapCanvas.height = Math.max(1, Math.round(rect.height * dpr));
+
+    const width = minimapCanvas.width;
+    const height = minimapCanvas.height;
+    const rawData = audioBuffer.getChannelData(0);
+    const step = Math.max(1, Math.ceil(rawData.length / width));
+    const amp = height / 2;
+
+    minimapBaseCanvas = document.createElement('canvas');
+    minimapBaseCanvas.width = width;
+    minimapBaseCanvas.height = height;
+    const baseCtx = minimapBaseCanvas.getContext('2d');
+    baseCtx.fillStyle = '#000';
+    baseCtx.fillRect(0, 0, width, height);
+    baseCtx.strokeStyle = 'rgba(255,176,0,0.55)';
+    baseCtx.lineWidth = 1;
+    baseCtx.beginPath();
+    for (let i = 0; i < width; i++) {
+        let min = 1.0, max = -1.0;
+        const start = i * step;
+        for (let j = 0; j < step && (start + j) < rawData.length; j++) {
+            const d = rawData[start + j];
+            if (d < min) min = d;
+            if (d > max) max = d;
+        }
+        baseCtx.moveTo(i, (1 + min) * amp);
+        baseCtx.lineTo(i, (1 + max) * amp);
+    }
+    baseCtx.stroke();
+
+    drawMinimapViewport();
+}
+
+function drawMinimapViewport() {
+    if (!audioBuffer || !minimapBaseCanvas) return;
+    const width = minimapCanvas.width;
+    const height = minimapCanvas.height;
+    const view = getViewWindow();
+    const x = (view.start / audioBuffer.duration) * width;
+    const w = Math.max(2, (view.dur / audioBuffer.duration) * width);
+
+    minimapCtx.clearRect(0, 0, width, height);
+    minimapCtx.drawImage(minimapBaseCanvas, 0, 0);
+    minimapCtx.fillStyle = 'rgba(255,176,0,0.16)';
+    minimapCtx.fillRect(x, 0, w, height);
+    minimapCtx.strokeStyle = '#ffb000';
+    minimapCtx.lineWidth = 1;
+    minimapCtx.strokeRect(x + 0.5, 0.5, Math.max(1, w - 1), height - 1);
+}
+
+let isDraggingMinimap = false;
+minimapCanvas.addEventListener('mousedown', (e) => {
+    if (!audioBuffer) return;
+    isDraggingMinimap = true;
+    jumpMinimapTo(e);
+});
+window.addEventListener('mousemove', (e) => { if (isDraggingMinimap) jumpMinimapTo(e); });
+window.addEventListener('mouseup', () => { isDraggingMinimap = false; });
+
+function jumpMinimapTo(e) {
+    const rect = minimapCanvas.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const targetTime = ratio * audioBuffer.duration;
+    setZoomLevel(zoomLevel, targetTime);
+}
 
 /* ---------- Auto-chop ---------- */
 btnAutoSlice.addEventListener('click', autoSliceAudio);
