@@ -1,257 +1,347 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Poly D Web Synth</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-  <style>
-    body {
-      background-color: #121215;
-      color: #e0e0e6;
-      font-family: 'Courier New', Courier, monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poly D Web Synth</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<style>
+  :root {
+    --amber: #ff9900;
+    --amber-dim: #b9740a;
+    --panel: #151518;
+    --panel-border: #2d2d35;
+  }
+  body {
+    background-color: #121215;
+    color: #e0e0e6;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 10px;
+    box-sizing: border-box;
+  }
 
-    /* Estilo inspiración Behringer Poly D / Minimoog con paneles de madera */
-    .synth-chassis {
-      background: #1a1a1f;
-      padding: 25px 35px;
-      border-radius: 10px;
-      border: 3px solid #2d2d35;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 2px 5px rgba(255,255,255,0.05);
-      position: relative;
-      max-width: 750px;
-      width: 100%;
-      box-sizing: border-box;
-    }
+  .synth-chassis {
+    background: #1a1a1f;
+    padding: 25px 35px;
+    border-radius: 10px;
+    border: 3px solid var(--panel-border);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 2px 5px rgba(255,255,255,0.05);
+    position: relative;
+    max-width: 1000px;
+    width: 100%;
+    box-sizing: border-box;
+  }
 
-    /* Laterales de madera sintética */
-    .synth-chassis::before, .synth-chassis::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 18px;
-      background: linear-gradient(90deg, #5c2c16, #3b1a0b);
-      border-radius: 4px;
-    }
-    .synth-chassis::before { left: -21px; }
-    .synth-chassis::after { right: -21px; }
+  .synth-chassis::before, .synth-chassis::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 18px;
+    background: linear-gradient(90deg, #5c2c16, #3b1a0b);
+    border-radius: 4px;
+  }
+  .synth-chassis::before { left: -21px; }
+  .synth-chassis::after { right: -21px; }
 
-    .synth-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #2d2d35;
-      padding-bottom: 12px;
-      margin-bottom: 20px;
-    }
+  .synth-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--panel-border);
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
-    .synth-header h2 {
-      margin: 0;
-      color: #ff9900;
-      letter-spacing: 2px;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-    }
+  .synth-header h2 {
+    margin: 0;
+    color: var(--amber);
+    letter-spacing: 2px;
+    font-size: 1.4rem;
+    text-transform: uppercase;
+  }
 
-    /* Paneles de control modulares */
-    .modules-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 15px;
-      margin-bottom: 20px;
-    }
+  .section-label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 18px 0 8px 2px;
+    border-top: 1px dashed var(--panel-border);
+    padding-top: 10px;
+  }
+  .section-label:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
 
-    .module-box {
-      background: #151518;
-      border: 1px solid #2d2d35;
-      border-radius: 6px;
-      padding: 12px;
-      text-align: center;
-    }
+  .modules-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
 
-    .module-box h3 {
-      font-size: 0.75rem;
-      color: #ff9900;
-      margin: 0 0 10px 0;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+  .module-box {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+  }
 
-    .control-group {
-      margin-bottom: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: 0.8rem;
-    }
+  .module-box h3 {
+    font-size: 0.7rem;
+    color: var(--amber);
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
 
-    .control-group label {
-      margin-bottom: 4px;
-      color: #9d9dae;
-    }
+  .control-group {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.72rem;
+  }
 
-    select, input[type="range"] {
-      background: #23232b;
-      color: #fff;
-      border: 1px solid #444;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-family: monospace;
-      width: 100%;
-    }
+  .control-group label {
+    margin-bottom: 3px;
+    color: #9d9dae;
+    white-space: nowrap;
+  }
 
-    input[type="range"] {
-      accent-color: #ff9900;
-      cursor: pointer;
-    }
+  select, input[type="range"], input[type="number"] {
+    background: #23232b;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.72rem;
+  }
 
-    /* Teclado Estilo Analógico (Incluyendo teclas negras) */
-    .keyboard-container {
-      background: #0b0b0d;
-      padding: 15px;
-      border-radius: 6px;
-      border: 1px solid #2d2d35;
-      overflow-x: auto;
-    }
+  input[type="range"] { accent-color: var(--amber); cursor: pointer; padding: 0; }
 
-    .keyboard {
-      display: flex;
-      position: relative;
-      height: 140px;
-      justify-content: center;
-      user-select: none;
-    }
+  input[type="checkbox"] {
+    width: 15px; height: 15px; accent-color: var(--amber); cursor: pointer;
+  }
 
-    .key {
-      position: relative;
-      cursor: pointer;
-      border-radius: 0 0 4px 4px;
-      box-shadow: inset 0 -3px 2px rgba(0,0,0,0.3);
-      transition: background 0.05s;
-    }
+  .osc-on-toggle {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 0.68rem; color: #9d9dae; margin-bottom: 6px;
+  }
 
-    .key.white {
-      width: 44px;
-      height: 140px;
-      background: #f0f0f5;
-      border: 1px solid #ccc;
-      z-index: 1;
-      margin-right: 2px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 8px;
-      color: #333;
-      font-size: 0.75rem;
-      font-weight: bold;
-    }
+  .keyboard-container {
+    background: #0b0b0d;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid var(--panel-border);
+    overflow-x: auto;
+    margin-top: 16px;
+  }
 
-    .key.white:active, .key.white.active {
-      background: #d0d0d8;
-    }
+  .keyboard {
+    display: flex;
+    position: relative;
+    height: 140px;
+    justify-content: center;
+    user-select: none;
+    min-width: 620px;
+  }
 
-    .key.black {
-      width: 28px;
-      height: 85px;
-      background: #1e1e24;
-      border: 1px solid #000;
-      position: absolute;
-      z-index: 3;
-      display: flex;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: 6px;
-      color: #aaa;
-      font-size: 0.6rem;
-      border-radius: 0 0 3px 3px;
-    }
+  .key {
+    position: relative;
+    cursor: pointer;
+    border-radius: 0 0 4px 4px;
+    box-shadow: inset 0 -3px 2px rgba(0,0,0,0.3);
+    transition: background 0.05s;
+  }
 
-    .key.black:active, .key.black.active {
-      background: #33333d;
-    }
+  .key.white {
+    width: 44px;
+    height: 140px;
+    background: #f0f0f5;
+    border: 1px solid #ccc;
+    z-index: 1;
+    margin-right: 2px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    color: #333;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
 
-    /* Posicionamiento específico para las teclas negras */
-    .kb-1 { left: 33px; }
-    .kb-2 { left: 79px; }
-    .kb-4 { left: 171px; }
-    .kb-5 { left: 217px; }
-    .kb-6 { left: 263px; }
+  .key.white:active, .key.white.active { background: #d0d0d8; }
 
-    .footer-controls {
-      margin-top: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+  .key.black {
+    width: 28px;
+    height: 85px;
+    background: #1e1e24;
+    border: 1px solid #000;
+    position: absolute;
+    z-index: 3;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 6px;
+    color: #aaa;
+    font-size: 0.6rem;
+    border-radius: 0 0 3px 3px;
+  }
 
-    .back-btn {
-      background: #23232b;
-      color: #ff9900;
-      border: 1px solid #ff9900;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-family: monospace;
-      text-decoration: none;
-      font-size: 0.8rem;
-    }
-    .back-btn:hover {
-      background: #ff9900;
-      color: #121215;
-    }
-  </style>
+  .key.black:active, .key.black.active { background: #33333d; }
+
+  .kb-1 { left: 33px; }
+  .kb-2 { left: 79px; }
+  .kb-4 { left: 171px; }
+  .kb-5 { left: 217px; }
+  .kb-6 { left: 263px; }
+
+  .footer-controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .back-btn {
+    background: #23232b;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: monospace;
+    text-decoration: none;
+    font-size: 0.8rem;
+  }
+  .back-btn:hover { background: var(--amber); color: #121215; }
+
+  .power-note {
+    font-size: 0.68rem; color: #555;
+  }
+</style>
 </head>
 <body>
 
   <div class="synth-chassis">
     <div class="synth-header">
-      <h2>Behringer Poly D (E뮬ación)</h2>
-      <span style="font-size: 0.75rem; color: #ff9900;">PARAPHONIC MODE</span>
+      <h2>Behringer Poly D (Emulación)</h2>
+      <span style="font-size: 0.72rem; color: var(--amber);">4-VCO PARAPHONIC · SHARED FILTER/VCA</span>
     </div>
 
-    <div class="modules-grid">
-      <div class="module-box">
-        <h3>Oscillator Source</h3>
-        <div class="control-group">
-          <label>Waveform</label>
-          <select id="waveform">
-            <option value="sawtooth">Sawtooth (Agresiva)</option>
-            <option value="square">Square (Pulso)</option>
-            <option value="triangle">Triangle (Suave)</option>
-          </select>
-        </div>
-      </div>
+    <div class="section-label">Oscillator Bank &amp; Mixer (4 VCOs paráfonos + ruido)</div>
+    <div class="modules-row" id="osc-bank">
+      <!-- OSC modules injected by JS -->
+    </div>
 
+    <div class="section-label">Filter · Envelopes · Modulation</div>
+    <div class="modules-row">
       <div class="module-box">
         <h3>Ladder Filter</h3>
         <div class="control-group">
-          <label>Cutoff: <span id="cutoff-val">1200</span> Hz</label>
-          <input type="range" id="cutoff" min="100" max="8000" step="50" value="1200">
+          <label>Mode</label>
+          <select id="filter-type">
+            <option value="lowpass">Lowpass 24dB</option>
+            <option value="highpass">Highpass</option>
+          </select>
         </div>
         <div class="control-group">
-          <label>Resonance (Q)</label>
-          <input type="range" id="resonance" min="0" max="15" step="0.5" value="2">
+          <label>Cutoff: <span id="cutoff-val">1200</span> Hz</label>
+          <input type="range" id="cutoff" min="60" max="10000" step="10" value="1200">
+        </div>
+        <div class="control-group">
+          <label>Emphasis (Reso)</label>
+          <input type="range" id="resonance" min="0" max="18" step="0.5" value="3">
+        </div>
+        <div class="control-group">
+          <label>Amount of Contour</label>
+          <input type="range" id="contour-amt" min="0" max="8000" step="50" value="3000">
+        </div>
+        <div class="control-group">
+          <label>Keyboard Tracking</label>
+          <input type="range" id="kb-track" min="0" max="1" step="0.05" value="0.5">
         </div>
       </div>
 
       <div class="module-box">
-        <h3>Analog Effects</h3>
+        <h3>Filter Contour (EG1)</h3>
+        <div class="control-group"><label>Attack</label><input type="range" id="f-attack" min="0.001" max="2" step="0.001" value="0.01"></div>
+        <div class="control-group"><label>Decay</label><input type="range" id="f-decay" min="0.01" max="3" step="0.01" value="0.4"></div>
+        <div class="control-group"><label>Sustain</label><input type="range" id="f-sustain" min="0" max="1" step="0.01" value="0.3"></div>
+      </div>
+
+      <div class="module-box">
+        <h3>Loudness Contour (EG2)</h3>
+        <div class="control-group"><label>Attack</label><input type="range" id="a-attack" min="0.001" max="2" step="0.001" value="0.02"></div>
+        <div class="control-group"><label>Decay</label><input type="range" id="a-decay" min="0.01" max="3" step="0.01" value="0.3"></div>
+        <div class="control-group"><label>Sustain</label><input type="range" id="a-sustain" min="0" max="1" step="0.01" value="0.7"></div>
+        <div class="osc-on-toggle">
+          <input type="checkbox" id="decay-switch">
+          <label for="decay-switch">Decay/Release switch</label>
+        </div>
+      </div>
+
+      <div class="module-box">
+        <h3>LFO</h3>
         <div class="control-group">
-          <label>Chorus Depth</label>
-          <input type="range" id="chorus-mix" min="0" max="1" step="0.05" value="0.4">
+          <label>Waveform</label>
+          <select id="lfo-wave">
+            <option value="triangle">Triangle</option>
+            <option value="square">Square</option>
+          </select>
         </div>
         <div class="control-group">
-          <label>Reverb Space</label>
-          <input type="range" id="reverb-mix" min="0" max="1" step="0.05" value="0.3">
+          <label>Rate: <span id="lfo-rate-val">5.0</span> Hz</label>
+          <input type="range" id="lfo-rate" min="0.1" max="20" step="0.1" value="5">
         </div>
+        <div class="control-group"><label>→ Filter Depth</label><input type="range" id="lfo-to-filter" min="0" max="2000" step="10" value="0"></div>
+        <div class="control-group"><label>→ Pitch Depth (vibrato)</label><input type="range" id="lfo-to-pitch" min="0" max="50" step="1" value="0"></div>
+      </div>
+
+      <div class="module-box">
+        <h3>Voice Mode / Glide</h3>
+        <div class="control-group">
+          <label>Mode</label>
+          <select id="voice-mode">
+            <option value="poly">Poly (paráfono, 4 notas)</option>
+            <option value="mono">Mono (todos los VCO)</option>
+            <option value="unison">Unison (grueso)</option>
+          </select>
+        </div>
+        <div class="osc-on-toggle">
+          <input type="checkbox" id="glide-switch">
+          <label for="glide-switch">Glide</label>
+        </div>
+        <div class="control-group">
+          <label>Glide Time</label>
+          <input type="range" id="glide-time" min="0" max="1.5" step="0.01" value="0.1">
+        </div>
+      </div>
+
+      <div class="module-box">
+        <h3>Output / FX</h3>
+        <div class="control-group"><label>Distortion</label><input type="range" id="distortion" min="0" max="0.9" step="0.02" value="0"></div>
+        <div class="control-group"><label>Chorus Depth</label><input type="range" id="chorus-mix" min="0" max="1" step="0.05" value="0.4"></div>
+        <div class="control-group"><label>Reverb Space</label><input type="range" id="reverb-mix" min="0" max="1" step="0.05" value="0.3"></div>
+        <div class="control-group"><label>Master Volume</label><input type="range" id="master-vol" min="0" max="1" step="0.02" value="0.8"></div>
       </div>
     </div>
 
@@ -275,88 +365,355 @@
 
     <div class="footer-controls">
       <a href="index.html" class="back-btn">← Volver al inicio</a>
-      <span style="font-size: 0.7rem; color: #555;">Toca con el ratón o teclado de PC (A-K)</span>
+      <span class="power-note">Toca con el ratón o teclado de PC (A-K). Mantén notas para probar el modo Poly (hasta 4 a la vez).</span>
     </div>
   </div>
 
-  <script>
-    // 1. Configuración de Cadena de Efectos Análogos (Reverb + Chorus Estéreo estilo BDD)
-    const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 }).toDestination();
-    const chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0.4 }).connect(reverb);
-    
-    // Filtro estilo Moog Ladder (Lowpass con resonancia cálida)
-    const filter = new Tone.Filter({
-      frequency: 1200,
-      type: "lowpass",
-      rolloff: -24, // Característico filtro de 4 polos (24dB)
-      Q: 2
-    }).connect(chorus);
-    
-    // Sintetizador Polifónico con envolvente clásica de sintetizador analógico
-    const synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: "sawtooth" },
-      envelope: { attack: 0.02, decay: 0.3, sustain: 0.4, release: 0.8 }
-    }).connect(filter);
+<script>
+/* =========================================================================
+   POLY D ENGINE
+   Arquitectura fiel al hardware real (Minimoog Model D / Behringer Poly D):
+   4 VCOs + ruido → MIXER → 1 FILTRO compartido (ladder 24dB) → 1 VCA
+   compartida (Loudness Contour). Es decir: los osciladores pueden sonar
+   "polifónicamente" (una nota por VCO) pero el filtro y la envolvente de
+   amplitud son ÚNICOS y compartidos — de ahí el término "paráfono".
+   ========================================================================= */
 
-    // 2. Mapeo de controles de la interfaz
-    document.getElementById("waveform").addEventListener("change", (e) => {
-      synth.set({ oscillator: { type: e.target.value } });
-    });
+class PolyDEngine {
+  constructor() {
+    this.oscCount = 4;
+    this.oscNodes = [];   // { osc, gain, octave, fineDetune, on }
+    this.slots = [];      // { note } — a qué nota está sonando cada VCO
+    this.heldNotes = [];  // pila de notas mantenidas (last-note priority)
+    this.mode = 'poly';
+    this.glide = false;
+    this.glideTime = 0.1;
+    this.started = false;
+    this._build();
+  }
 
-    const cutoffInput = document.getElementById("cutoff");
-    const cutoffVal = document.getElementById("cutoff-val");
-    cutoffInput.addEventListener("input", (e) => {
-      const val = e.target.value;
-      filter.frequency.rampTo(val, 0.05);
-      cutoffVal.innerText = val;
-    });
+  _build() {
+    // --- Salida / FX ---
+    this.masterGain = new Tone.Gain(0.8).toDestination();
+    this.reverb = new Tone.Reverb({ decay: 2.5, wet: 0.3 }).connect(this.masterGain);
+    this.chorus = new Tone.Chorus({ frequency: 1.5, delayTime: 3.5, depth: 0.7, wet: 0.4 }).connect(this.reverb);
+    this.distortion = new Tone.Distortion({ distortion: 0.0, wet: 1 }).connect(this.chorus);
 
-    document.getElementById("resonance").addEventListener("input", (e) => {
-      filter.Q.value = parseFloat(e.target.value);
-    });
+    // --- VCA compartida (Loudness Contour) ---
+    this.ampEnv = new Tone.AmplitudeEnvelope({
+      attack: 0.02, decay: 0.3, sustain: 0.7, release: 0.01
+    }).connect(this.distortion);
 
-    document.getElementById("chorus-mix").addEventListener("input", (e) => {
-      chorus.wet.value = parseFloat(e.target.value);
-    });
+    // --- Filtro ladder compartido ---
+    this.filter = new Tone.Filter({
+      frequency: 1200, type: 'lowpass', rolloff: -24, Q: 3
+    }).connect(this.ampEnv);
 
-    document.getElementById("reverb-mix").addEventListener("input", (e) => {
-      reverb.wet.value = parseFloat(e.target.value);
-    });
+    // --- Envolvente de filtro (Filter Contour / EG1) sumada al cutoff ---
+    this.filterEnv = new Tone.Envelope({ attack: 0.01, decay: 0.4, sustain: 0.3, release: 0.01 });
+    this.contourDepth = new Tone.Gain(3000); // "Amount of Contour" en Hz
+    this.filterEnv.connect(this.contourDepth);
+    this.contourDepth.connect(this.filter.frequency);
 
-    // 3. Funciones de activación de notas con soporte visual
-    async function playNote(note, element) {
+    // --- Keyboard tracking: desplaza el cutoff según la nota tocada ---
+    this.kbTrackSignal = new Tone.Signal(0);
+    this.kbTrackSignal.connect(this.filter.frequency);
+    this.kbTrackAmount = 0.5;
+
+    // --- LFO independiente (vibrato + filter wobble) ---
+    this.lfo = new Tone.LFO({ frequency: 5, type: 'triangle', min: -1, max: 1 }).start();
+    this.lfoToFilter = new Tone.Gain(0);
+    this.lfoToPitch = new Tone.Gain(0);
+    this.lfo.connect(this.lfoToFilter);
+    this.lfo.connect(this.lfoToPitch);
+    this.lfoToFilter.connect(this.filter.frequency);
+
+    // --- Mixer bus: suma los 4 VCOs + ruido antes del filtro ---
+    this.mixerBus = new Tone.Gain(1).connect(this.filter);
+
+    // --- Ruido ---
+    this.noise = new Tone.Noise('white');
+    this.noiseGain = new Tone.Gain(0).connect(this.mixerBus);
+    this.noise.connect(this.noiseGain);
+    this.noise.start();
+
+    // --- 4 VCOs paráfonos ---
+    const defaultWaves = ['sawtooth', 'sawtooth', 'square', 'triangle'];
+    const defaultOn = [true, true, false, false];
+    for (let i = 0; i < this.oscCount; i++) {
+      const osc = new Tone.Oscillator({ frequency: 220, type: defaultWaves[i] }).start();
+      const gain = new Tone.Gain(defaultOn[i] ? 0.6 : 0).connect(this.mixerBus);
+      osc.connect(gain);
+      this.lfoToPitch.connect(osc.detune);
+      this.oscNodes.push({ osc, gain, octave: 0, fineDetune: i * 3, on: defaultOn[i] });
+      this.slots.push({ note: null });
+    }
+  }
+
+  async ensureStarted() {
+    if (!this.started) {
       await Tone.start();
-      synth.triggerAttackRelease(note, "4n");
-      
-      if(element) {
-        element.classList.add("active");
-        setTimeout(() => element.classList.remove("active"), 150);
+      this.started = true;
+    }
+  }
+
+  // -- utilidades --
+  _setOscFrequency(i, baseFreq, unisonSpread) {
+    const cfg = this.oscNodes[i];
+    const octMult = Math.pow(2, cfg.octave);
+    const detuneCents = cfg.fineDetune + (unisonSpread ? (i - 1.5) * 6 : 0);
+    const target = baseFreq * octMult * Math.pow(2, detuneCents / 1200);
+    const time = this.glide ? this.glideTime : 0.005;
+    cfg.osc.frequency.rampTo(target, time);
+  }
+
+  _updateKeyboardTrack(midi) {
+    const offset = (midi - 60) * this.kbTrackAmount * 25; // Hz por semitono a amount=1
+    this.kbTrackSignal.rampTo(offset, 0.01);
+  }
+
+  noteOn(note) {
+    if (this.heldNotes.find(n => n.note === note)) return;
+    const midi = Tone.Frequency(note).toMidi();
+    const baseFreq = Tone.Frequency(note).toFrequency();
+    this.heldNotes.push({ note, midi, baseFreq });
+
+    if (this.mode === 'poly') {
+      // asigna la nota a un VCO libre (paráfono, hasta 4 notas simultáneas)
+      let slotIndex = this.slots.findIndex((s, i) => s.note === null && this.oscNodes[i].on);
+      if (slotIndex === -1) {
+        const onIdx = this.oscNodes.map((o, i) => (o.on ? i : -1)).filter(i => i >= 0);
+        slotIndex = onIdx.length ? onIdx[0] : -1; // robo simple de voz si no hay libres
+      }
+      if (slotIndex !== -1) {
+        this.slots[slotIndex].note = note;
+        this._setOscFrequency(slotIndex, baseFreq, false);
+      }
+    } else {
+      // mono / unison: todos los VCO activos siguen esta nota
+      this.oscNodes.forEach((o, i) => {
+        if (o.on) {
+          this.slots[i].note = note;
+          this._setOscFrequency(i, baseFreq, this.mode === 'unison');
+        }
+      });
+    }
+
+    this._updateKeyboardTrack(midi);
+
+    // El filtro y la VCA son ÚNICOS: cada tecla nueva retriggerea el
+    // contour compartido (comportamiento real y algo "impredecible" al
+    // tocar acordes, característico de los paráfonos analógicos).
+    this.ampEnv.triggerAttack();
+    this.filterEnv.triggerAttack();
+  }
+
+  noteOff(note) {
+    const idx = this.heldNotes.findIndex(n => n.note === note);
+    if (idx === -1) return;
+    this.heldNotes.splice(idx, 1);
+
+    if (this.mode === 'poly') {
+      const slotIndex = this.slots.findIndex(s => s.note === note);
+      if (slotIndex !== -1) this.slots[slotIndex].note = null;
+    } else {
+      this.oscNodes.forEach((o, i) => { if (this.slots[i].note === note) this.slots[i].note = null; });
+      if (this.heldNotes.length > 0) {
+        // last-note priority: vuelve a la nota anterior mantenida
+        const last = this.heldNotes[this.heldNotes.length - 1];
+        this.oscNodes.forEach((o, i) => {
+          if (o.on) {
+            this.slots[i].note = last.note;
+            this._setOscFrequency(i, last.baseFreq, this.mode === 'unison');
+          }
+        });
+        this._updateKeyboardTrack(last.midi);
+        return;
       }
     }
 
-    // Eventos de clic en el teclado virtual
-    document.querySelectorAll(".key").forEach(key => {
-      key.addEventListener("mousedown", () => {
-        const note = key.getAttribute("data-note");
-        playNote(note, key);
-      });
-    });
+    if (this.heldNotes.length === 0) {
+      this.ampEnv.triggerRelease();
+      this.filterEnv.triggerRelease();
+    }
+  }
 
-    // 4. Soporte opcional para tocar con el teclado de la computadora
-    const keyMap = {
-      'a': 'C4', 'w': 'C#4', 's': 'D4', 'e': 'D#4', 'd': 'E4',
-      'f': 'F4', 't': 'F#4', 'g': 'G4', 'y': 'G#4', 'h': 'A4',
-      'u': 'A#4', 'j': 'B4', 'k': 'C5'
-    };
+  setDecaySwitch(on) {
+    const release = on ? Math.max(this.ampEnv.decay, 0.05) : 0.01;
+    const frelease = on ? Math.max(this.filterEnv.decay, 0.05) : 0.01;
+    this.ampEnv.release = release;
+    this.filterEnv.release = frelease;
+  }
+}
 
-    window.addEventListener('keydown', (e) => {
-      if (e.repeat) return;
-      const note = keyMap[e.key.toLowerCase()];
-      if (note) {
-        const keyElement = document.querySelector(`[data-note="${note}"]`);
-        playNote(note, keyElement);
-      }
-    });
-  </script>
+const engine = new PolyDEngine();
+
+/* ---- Construcción dinámica de los 4 módulos de oscilador + ruido ---- */
+const oscBank = document.getElementById('osc-bank');
+const oscLabels = ['VCO 1', 'VCO 2', 'VCO 3', 'VCO 4'];
+const waveOptions = [
+  ['sawtooth', 'Sawtooth'], ['square', 'Square'], ['triangle', 'Triangle'], ['sine', 'Sine']
+];
+const octaveOptions = [
+  [-2, "32'"], [-1, "16'"], [0, "8'"], [1, "4'"], [2, "2'"]
+];
+
+engine.oscNodes.forEach((cfg, i) => {
+  const box = document.createElement('div');
+  box.className = 'module-box';
+  box.innerHTML = `
+    <h3>${oscLabels[i]}</h3>
+    <div class="osc-on-toggle">
+      <input type="checkbox" id="osc-on-${i}" ${cfg.on ? 'checked' : ''}>
+      <label for="osc-on-${i}">On (mixer)</label>
+    </div>
+    <div class="control-group">
+      <label>Waveform</label>
+      <select id="osc-wave-${i}">
+        ${waveOptions.map(([v, l]) => `<option value="${v}" ${cfg.osc.type === v ? 'selected' : ''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Range</label>
+      <select id="osc-oct-${i}">
+        ${octaveOptions.map(([v, l]) => `<option value="${v}" ${v === 0 ? 'selected' : ''}>${l}</option>`).join('')}
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Fine Tune (cents)</label>
+      <input type="range" id="osc-fine-${i}" min="-50" max="50" step="1" value="${cfg.fineDetune}">
+    </div>
+    <div class="control-group">
+      <label>Level</label>
+      <input type="range" id="osc-level-${i}" min="0" max="1" step="0.02" value="${cfg.gain.gain.value}">
+    </div>
+  `;
+  oscBank.appendChild(box);
+
+  document.getElementById(`osc-on-${i}`).addEventListener('change', e => {
+    cfg.on = e.target.checked;
+    cfg.gain.gain.rampTo(cfg.on ? parseFloat(document.getElementById(`osc-level-${i}`).value) : 0, 0.02);
+  });
+  document.getElementById(`osc-wave-${i}`).addEventListener('change', e => cfg.osc.type = e.target.value);
+  document.getElementById(`osc-oct-${i}`).addEventListener('change', e => {
+    cfg.octave = parseInt(e.target.value);
+    if (engine.slots[i].note) engine._setOscFrequency(i, Tone.Frequency(engine.slots[i].note).toFrequency(), engine.mode === 'unison');
+  });
+  document.getElementById(`osc-fine-${i}`).addEventListener('input', e => {
+    cfg.fineDetune = parseFloat(e.target.value);
+    if (engine.slots[i].note) engine._setOscFrequency(i, Tone.Frequency(engine.slots[i].note).toFrequency(), engine.mode === 'unison');
+  });
+  document.getElementById(`osc-level-${i}`).addEventListener('input', e => {
+    if (cfg.on) cfg.gain.gain.rampTo(parseFloat(e.target.value), 0.02);
+  });
+});
+
+// módulo de ruido añadido al final del banco
+const noiseBox = document.createElement('div');
+noiseBox.className = 'module-box';
+noiseBox.innerHTML = `
+  <h3>Noise</h3>
+  <div class="osc-on-toggle"><input type="checkbox" id="noise-on"><label for="noise-on">On (mixer)</label></div>
+  <div class="control-group"><label>Level</label><input type="range" id="noise-level" min="0" max="1" step="0.02" value="0.3"></div>
+`;
+oscBank.appendChild(noiseBox);
+document.getElementById('noise-on').addEventListener('change', e => {
+  engine.noiseGain.gain.rampTo(e.target.checked ? parseFloat(document.getElementById('noise-level').value) : 0, 0.02);
+});
+document.getElementById('noise-level').addEventListener('input', e => {
+  if (document.getElementById('noise-on').checked) engine.noiseGain.gain.rampTo(parseFloat(e.target.value), 0.02);
+});
+
+/* ---- Filtro ---- */
+document.getElementById('filter-type').addEventListener('change', e => engine.filter.type = e.target.value);
+const cutoffInput = document.getElementById('cutoff');
+const cutoffVal = document.getElementById('cutoff-val');
+cutoffInput.addEventListener('input', e => {
+  engine.filter.frequency.value = parseFloat(e.target.value);
+  cutoffVal.innerText = e.target.value;
+});
+document.getElementById('resonance').addEventListener('input', e => engine.filter.Q.value = parseFloat(e.target.value));
+document.getElementById('contour-amt').addEventListener('input', e => engine.contourDepth.gain.value = parseFloat(e.target.value));
+document.getElementById('kb-track').addEventListener('input', e => engine.kbTrackAmount = parseFloat(e.target.value));
+
+/* ---- Envolventes ---- */
+const decaySwitch = document.getElementById('decay-switch');
+function refreshRelease() { engine.setDecaySwitch(decaySwitch.checked); }
+document.getElementById('f-attack').addEventListener('input', e => engine.filterEnv.attack = parseFloat(e.target.value));
+document.getElementById('f-decay').addEventListener('input', e => { engine.filterEnv.decay = parseFloat(e.target.value); refreshRelease(); });
+document.getElementById('f-sustain').addEventListener('input', e => engine.filterEnv.sustain = parseFloat(e.target.value));
+document.getElementById('a-attack').addEventListener('input', e => engine.ampEnv.attack = parseFloat(e.target.value));
+document.getElementById('a-decay').addEventListener('input', e => { engine.ampEnv.decay = parseFloat(e.target.value); refreshRelease(); });
+document.getElementById('a-sustain').addEventListener('input', e => engine.ampEnv.sustain = parseFloat(e.target.value));
+decaySwitch.addEventListener('change', refreshRelease);
+
+/* ---- LFO ---- */
+document.getElementById('lfo-wave').addEventListener('change', e => engine.lfo.type = e.target.value);
+const lfoRate = document.getElementById('lfo-rate');
+const lfoRateVal = document.getElementById('lfo-rate-val');
+lfoRate.addEventListener('input', e => {
+  engine.lfo.frequency.value = parseFloat(e.target.value);
+  lfoRateVal.innerText = parseFloat(e.target.value).toFixed(1);
+});
+document.getElementById('lfo-to-filter').addEventListener('input', e => engine.lfoToFilter.gain.value = parseFloat(e.target.value));
+document.getElementById('lfo-to-pitch').addEventListener('input', e => engine.lfoToPitch.gain.value = parseFloat(e.target.value));
+
+/* ---- Modo de voz / Glide ---- */
+document.getElementById('voice-mode').addEventListener('change', e => {
+  engine.mode = e.target.value;
+  engine.heldNotes = [];
+  engine.slots.forEach(s => s.note = null);
+});
+document.getElementById('glide-switch').addEventListener('change', e => engine.glide = e.target.checked);
+document.getElementById('glide-time').addEventListener('input', e => engine.glideTime = parseFloat(e.target.value));
+
+/* ---- FX / Master ---- */
+document.getElementById('distortion').addEventListener('input', e => engine.distortion.distortion = parseFloat(e.target.value));
+document.getElementById('chorus-mix').addEventListener('input', e => engine.chorus.wet.value = parseFloat(e.target.value));
+document.getElementById('reverb-mix').addEventListener('input', e => engine.reverb.wet.value = parseFloat(e.target.value));
+document.getElementById('master-vol').addEventListener('input', e => engine.masterGain.gain.rampTo(parseFloat(e.target.value), 0.02));
+
+/* ---- Teclado virtual (mousedown/up = gate real, no nota fija) ---- */
+document.querySelectorAll('.key').forEach(key => {
+  const note = key.getAttribute('data-note');
+  const press = async () => {
+    await engine.ensureStarted();
+    engine.noteOn(note);
+    key.classList.add('active');
+  };
+  const release = () => {
+    engine.noteOff(note);
+    key.classList.remove('active');
+  };
+  key.addEventListener('mousedown', press);
+  key.addEventListener('mouseup', release);
+  key.addEventListener('mouseleave', () => { if (key.classList.contains('active')) release(); });
+  key.addEventListener('touchstart', e => { e.preventDefault(); press(); }, { passive: false });
+  key.addEventListener('touchend', e => { e.preventDefault(); release(); });
+});
+
+/* ---- Teclado físico (A-K) con keydown/keyup reales ---- */
+const keyMap = {
+  'a': 'C4', 'w': 'C#4', 's': 'D4', 'e': 'D#4', 'd': 'E4',
+  'f': 'F4', 't': 'F#4', 'g': 'G4', 'y': 'G#4', 'h': 'A4',
+  'u': 'A#4', 'j': 'B4', 'k': 'C5'
+};
+window.addEventListener('keydown', async (e) => {
+  if (e.repeat) return;
+  const note = keyMap[e.key.toLowerCase()];
+  if (!note) return;
+  await engine.ensureStarted();
+  engine.noteOn(note);
+  const el = document.querySelector(`[data-note="${note}"]`);
+  if (el) el.classList.add('active');
+});
+window.addEventListener('keyup', (e) => {
+  const note = keyMap[e.key.toLowerCase()];
+  if (!note) return;
+  engine.noteOff(note);
+  const el = document.querySelector(`[data-note="${note}"]`);
+  if (el) el.classList.remove('active');
+});
+</script>
 </body>
 </html>
