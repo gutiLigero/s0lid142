@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
   new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
   j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-TFLKS522');</script>
+  <!-- End Google Tag Manager -->
+
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>s0lid142 — Exhibition & Catalog</title>
+  
+  <!-- Importamos Three.js para el motor 3D -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <style>
     :root {
@@ -22,16 +28,12 @@
       --border-subtle: rgba(182, 191, 177, 0.18);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background-color: var(--bg-black);
       color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       min-height: 100vh;
       display: flex;
       justify-content: center;
@@ -48,7 +50,7 @@
       align-items: center;
     }
 
-    /* Galería / Marco de Imagen */
+    /* Marco de Imagen / Canvas 3D */
     .artwork-frame {
       width: 100%;
       height: 280px;
@@ -62,43 +64,26 @@
       justify-content: center;
       align-items: center;
       transition: border-color 0.3s ease;
+      cursor: crosshair;
     }
 
     .artwork-frame:hover {
       border-color: var(--accent-neon);
+      box-shadow: 0 0 20px rgba(83, 250, 0, 0.05);
     }
 
-    .artwork-frame img {
+    /* Contenedor exclusivo del 3D */
+    #canvas-container {
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      display: block;
-      filter: grayscale(15%) contrast(105%);
-      transition: transform 0.5s ease;
-    }
-
-    .artwork-frame:hover img {
-      transform: scale(1.02);
-    }
-
-    /* Placeholder mientras subes la foto */
-    .image-placeholder {
-      color: var(--text-muted);
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-align: center;
-      padding: 20px;
-      border: 1px dashed var(--border-subtle);
+      position: absolute;
+      top: 0;
+      left: 0;
     }
 
     /* Cabecera Editorial */
-    header {
-      text-align: center;
-      margin-bottom: 32px;
-      width: 100%;
-    }
-
+    header { text-align: center; margin-bottom: 32px; width: 100%; }
+    
     .catalog-tag {
       font-size: 0.7rem;
       letter-spacing: 3px;
@@ -109,28 +94,11 @@
       font-weight: 600;
     }
 
-    h1 {
-      font-size: 2.2rem;
-      font-weight: 300;
-      letter-spacing: -0.5px;
-      color: var(--text-main);
-      margin-bottom: 6px;
-    }
-
-    p.sub-title {
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      letter-spacing: 1px;
-      font-weight: 400;
-    }
+    h1 { font-size: 2.2rem; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 6px; }
+    p.sub-title { color: var(--text-muted); font-size: 0.88rem; letter-spacing: 1px; }
 
     /* Enlaces / Catálogo */
-    .catalog-list {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    .catalog-list { width: 100%; display: flex; flex-direction: column; gap: 12px; }
 
     .catalog-item {
       display: flex;
@@ -143,90 +111,44 @@
       border-radius: 4px;
       border: 1px solid var(--border-subtle);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
     }
 
-    .catalog-item .item-info {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .catalog-item .item-info { display: flex; align-items: center; gap: 12px; }
+    .catalog-item .index { font-size: 0.75rem; color: var(--brand-green); font-weight: 600; letter-spacing: 1px; }
+    .catalog-item .title { font-size: 0.95rem; letter-spacing: 0.5px; font-weight: 500; }
+    .catalog-item .arrow { font-size: 0.9rem; color: var(--text-muted); transition: transform 0.25s ease, color 0.25s ease; }
 
-    .catalog-item .index {
-      font-size: 0.75rem;
-      color: var(--brand-green);
-      font-weight: 600;
-      letter-spacing: 1px;
-    }
-
-    .catalog-item .title {
-      font-size: 0.95rem;
-      letter-spacing: 0.5px;
-      font-weight: 500;
-    }
-
-    .catalog-item .arrow {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      transition: transform 0.25s ease, color 0.25s ease;
-    }
-
-    /* Hover State Estilo Galería */
     .catalog-item:hover {
       background: #1c211a;
       border-color: var(--accent-neon);
       transform: translateY(-2px);
       box-shadow: 0 4px 20px rgba(83, 250, 0, 0.08);
     }
+    .catalog-item:hover .arrow { color: var(--accent-neon); transform: translateX(4px); }
+    .catalog-item:hover .index { color: var(--accent-neon); }
+    
+    .catalog-item.synth-highlight { border-color: rgba(66, 121, 205, 0.4); }
+    .catalog-item.synth-highlight .index { color: var(--brand-blue); }
+    .catalog-item.synth-highlight:hover { border-color: var(--brand-blue); }
 
-    .catalog-item:hover .arrow {
-      color: var(--accent-neon);
-      transform: translateX(4px);
-    }
-
-    .catalog-item:hover .index {
-      color: var(--accent-neon);
-    }
-
-    /* Botón destacado del Sintetizador */
-    .catalog-item.synth-highlight {
-      border-color: rgba(66, 121, 205, 0.4);
-    }
-
-    .catalog-item.synth-highlight .index {
-      color: var(--brand-blue);
-    }
-
-    .catalog-item.synth-highlight:hover {
-      border-color: var(--accent-neon);
-    }
-
-    /* Footer */
     footer {
-      margin-top: 48px;
-      text-align: center;
-      border-top: 1px solid var(--border-subtle);
-      width: 100%;
-      padding-top: 20px;
+      margin-top: 48px; text-align: center; border-top: 1px solid var(--border-subtle);
+      width: 100%; padding-top: 20px;
     }
-
-    footer p {
-      font-size: 0.72rem;
-      letter-spacing: 2px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
+    footer p { font-size: 0.72rem; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase; }
   </style>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TFLKS522"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
   <div class="gallery-container">
     
+    <!-- ESPACIO 3D INTERACTIVO -->
     <div class="artwork-frame">
-      <div class="image-placeholder">
-        <img src="Cover.jpg" alt="s0lid142 Artwork">
-      </div>
+      <div id="canvas-container"></div>
     </div>
 
     <header>
@@ -236,69 +158,103 @@
     </header>
 
     <main class="catalog-list">
-      
       <a href="https://s0lid142.bandcamp.com/music" target="_blank" rel="noopener" class="catalog-item">
-        <div class="item-info">
-          <span class="index">[01]</span>
-          <span class="title">Bandcamp Discography</span>
-        </div>
-        <span class="arrow">↗</span>
+        <div class="item-info"><span class="index">[01]</span><span class="title">Bandcamp Discography</span></div><span class="arrow">↗</span>
       </a>
 
       <a href="synth.html" class="catalog-item synth-highlight">
-        <div class="item-info">
-          <span class="index">[02]</span>
-          <span class="title">Interactive Web Synth</span>
-        </div>
-        <span class="arrow">→</span>
+        <div class="item-info"><span class="index">[02]</span><span class="title">Interactive Web Synth</span></div><span class="arrow">→</span>
       </a>
-
-      <a href="lab.html" class="catalog-item">
-        <div class="item-info">
-          <span class="index">[02.5]</span>
-          <span class="title">R&D Lab / Tech Portfolio</span>
-        </div>
-        <span class="arrow">→</span>
+      
+      <a href="lab.html" class="catalog-item synth-highlight">
+        <div class="item-info"><span class="index">[03]</span><span class="title">R&D Lab / Tech Portfolio</span></div><span class="arrow">→</span>
       </a>
 
       <a href="beats.html" class="catalog-item synth-highlight">
-        <div class="item-info">
-          <span class="index">[02.8]</span>
-          <span class="title">WebMPC (Drum Machine)</span>
-        </div>
-        <span class="arrow">→</span>
+        <div class="item-info"><span class="index">[04]</span><span class="title">WebMPC (Drum Machine)</span></div><span class="arrow">→</span>
       </a>
 
       <a href="https://www.instagram.com/ttt.discos/" target="_blank" rel="noopener" class="catalog-item">
-        <div class="item-info">
-          <span class="index">[03]</span>
-          <span class="title">Instagram — @ttt.discos</span>
-        </div>
-        <span class="arrow">↗</span>
+        <div class="item-info"><span class="index">[05]</span><span class="title">Instagram — @ttt.discos</span></div><span class="arrow">↗</span>
       </a>
 
       <a href="https://www.tiktok.com/@elpablones" target="_blank" rel="noopener" class="catalog-item">
-        <div class="item-info">
-          <span class="index">[04]</span>
-          <span class="title">TikTok — @elpablones</span>
-        </div>
-        <span class="arrow">↗</span>
+        <div class="item-info"><span class="index">[06]</span><span class="title">TikTok — @elpablones</span></div><span class="arrow">↗</span>
       </a>
-
-      <a href="https://x.com/ElPablones" target="_blank" rel="noopener" class="catalog-item">
-        <div class="item-info">
-          <span class="index">[05]</span>
-          <span class="title">X (Twitter) — @ElPablones</span>
-        </div>
-        <span class="arrow">↗</span>
-      </a>
-
     </main>
 
     <footer>
       <p>© 2026 s0lid142 • TTT Discos</p>
     </footer>
-
   </div>
+
+  <!-- LÓGICA DEL MOTOR 3D -->
+  <script>
+    const container = document.getElementById('canvas-container');
+    
+    // 1. Configurar Escena, Cámara y Motor de Render
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); // alpha: true deja el fondo transparente
+    
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    // 2. Crear la Geometría (Un Sólido: Icosaedro)
+    const geometry = new THREE.IcosahedronGeometry(1.4, 1); 
+    
+    // Material tipo Wireframe usando tu color neón
+    const material = new THREE.MeshBasicMaterial({ 
+      color: 0x53FA00, 
+      wireframe: true,
+      transparent: true,
+      opacity: 0.6
+    });
+    
+    const solidObj = new THREE.Mesh(geometry, material);
+    scene.add(solidObj);
+
+    camera.position.z = 3;
+
+    // 3. Capturar el movimiento del ratón
+    let targetRotationX = 0;
+    let targetRotationY = 0;
+    let mouseX = 0;
+    let mouseY = 0;
+    const windowHalfX = window.innerWidth / 2;
+    const windowHalfY = window.innerHeight / 2;
+
+    document.addEventListener('mousemove', (event) => {
+      mouseX = (event.clientX - windowHalfX) * 0.001;
+      mouseY = (event.clientY - windowHalfY) * 0.001;
+    });
+
+    // 4. Bucle de Animación
+    function animate() {
+      requestAnimationFrame(animate);
+
+      // Rotación base automática
+      solidObj.rotation.x += 0.002;
+      solidObj.rotation.y += 0.003;
+
+      // Inercia y reacción al ratón
+      targetRotationY = mouseX * 2;
+      targetRotationX = mouseY * 2;
+      
+      solidObj.rotation.y += 0.05 * (targetRotationY - solidObj.rotation.y);
+      solidObj.rotation.x += 0.05 * (targetRotationX - solidObj.rotation.x);
+
+      renderer.render(scene, camera);
+    }
+
+    // 5. Ajustar el tamaño si se cambia la pantalla
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    animate();
+  </script>
 </body>
 </html>
