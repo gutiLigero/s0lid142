@@ -1,16 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TFLKS522');</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>s0lid142 — Simuladores y juegos</title>
+  
   <style>
     :root {
       --bg-black: #0F110E;
       --surface-dark: #151814;
-      --surface-hover: #1c211a;
       --text-main: #DDE1DB;
       --text-muted: #B6BFB1;
+      --brand-blue: #4279CD;
+      --brand-green: #408C48;
       --accent-neon: #53FA00;
       --border-subtle: rgba(182, 191, 177, 0.18);
     }
@@ -26,71 +33,34 @@
       justify-content: center;
       align-items: center;
       padding: 40px 20px;
+      -webkit-font-smoothing: antialiased;
     }
 
     .container {
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    .profile-card {
-      width: 100%;
-      background-color: var(--surface-dark);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 28px 20px;
-      text-align: center;
-      margin-bottom: 24px;
-    }
-
-    .avatar-frame {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 14px auto;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-      background: #1a1e19;
-    }
-
-    .avatar-frame img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .profile-card h1 {
-      font-size: 1.4rem;
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .location {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-    }
-
-    .social-icons {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-    }
-
-    .social-icons a {
-      color: var(--text-muted);
-      text-decoration: none;
-      font-size: 0.8rem;
+    /* Cabecera Editorial (Consistente con index.html) */
+    header { text-align: center; margin-bottom: 32px; width: 100%; }
+    
+    .catalog-tag {
+      font-size: 0.7rem;
+      letter-spacing: 3px;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      transition: color 0.2s;
+      color: var(--accent-neon);
+      margin-bottom: 8px;
+      display: block;
+      font-weight: 600;
     }
 
-    .social-icons a:hover { color: var(--accent-neon); }
+    h1 { font-size: 2.2rem; font-weight: 300; letter-spacing: -0.5px; margin-bottom: 6px; }
+    p.sub-title { color: var(--text-muted); font-size: 0.88rem; letter-spacing: 1px; }
 
+    /* Lista de Enlaces */
     .links-list {
       width: 100%;
       display: flex;
@@ -105,61 +75,112 @@
       background: var(--surface-dark);
       color: var(--text-main);
       text-decoration: none;
-      padding: 16px 20px;
-      border-radius: 6px;
+      padding: 18px 22px;
+      border-radius: 4px;
       border: 1px solid var(--border-subtle);
-      transition: all 0.25s ease;
-      font-weight: 500;
-      font-size: 0.92rem;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    .link-item .item-info { display: flex; flex-direction: column; gap: 4px; }
+    .link-item .title-row { display: flex; align-items: center; gap: 12px; }
+    
+    .link-item .index { font-size: 0.75rem; color: var(--brand-blue); font-weight: 600; letter-spacing: 1px; }
+    .link-item .title { font-size: 0.95rem; letter-spacing: 0.5px; font-weight: 500; }
+    .link-item .desc { font-size: 0.7rem; color: var(--text-muted); font-family: monospace; letter-spacing: 0.5px; margin-left: 32px;}
+    
+    .link-item .arrow { font-size: 0.9rem; color: var(--text-muted); transition: transform 0.25s ease, color 0.25s ease; }
+
     .link-item:hover {
-      background: var(--surface-hover);
+      background: #1c211a;
       border-color: var(--accent-neon);
       transform: translateY(-2px);
       box-shadow: 0 4px 20px rgba(83, 250, 0, 0.08);
     }
-
-    .link-item span { color: var(--text-muted); transition: color 0.2s; }
-    .link-item:hover span { color: var(--accent-neon); }
+    
+    .link-item:hover .arrow { color: var(--accent-neon); transform: translateX(4px); }
+    .link-item:hover .index { color: var(--accent-neon); }
 
     .back-link {
-      margin-top: 30px;
+      margin-top: 40px;
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 2px;
       transition: color 0.2s;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
     }
-    .back-link:hover { color: var(--accent-neon); }
+    
+    .back-link:hover { 
+      color: var(--accent-neon);
+      border-bottom: 1px solid var(--accent-neon);
+    }
   </style>
 </head>
 <body>
-
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TFLKS522"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="container">
     
+    <header>
+      <span class="catalog-tag">Laboratorio Web</span>
+      <h1>s0lid142</h1>
+      <p class="sub-title">Simuladores e interfaces interactivas</p>
+    </header>
+
     <div class="links-list">
+      
       <a href="synth.html" class="link-item">
-        [01] Sintetizador web interactivo <span>→</span>
+        <div class="item-info">
+          <div class="title-row">
+            <span class="index">[01]</span>
+            <span class="title">Sintetizador Polifónico</span>
+          </div>
+          <span class="desc">Tone.js / Arquitectura Minimoog</span>
+        </div>
+        <span class="arrow">→</span>
       </a>
       
       <a href="sampler.html" class="link-item">
-        [02] Sampler de video (Caja de video) <span>→</span>
+        <div class="item-info">
+          <div class="title-row">
+            <span class="index">[02]</span>
+            <span class="title">Caja de Video Sampler</span>
+          </div>
+          <span class="desc">Web Audio API / Video Mapping</span>
+        </div>
+        <span class="arrow">→</span>
       </a>
 
       <a href="beats.html" class="link-item">
-        [03] WebMPC (Caja de ritmos) <span>→</span>
+        <div class="item-info">
+          <div class="title-row">
+            <span class="index">[03]</span>
+            <span class="title">WebMPC</span>
+          </div>
+          <span class="desc">Caja de ritmos basada en navegador</span>
+        </div>
+        <span class="arrow">→</span>
       </a>
 
       <a href="intervalo.html" class="link-item">
-        [04] Intervalo <span>→</span>
+        <div class="item-info">
+          <div class="title-row">
+            <span class="index">[04]</span>
+            <span class="title">Intervalo</span>
+          </div>
+          <span class="desc">Experiencia interactiva</span>
+        </div>
+        <span class="arrow">→</span>
       </a>
+
     </div>
 
-    <a href="index.html" class="back-link">← Volver al Archivo Principal</a>
+    <a href="index.html" class="back-link">← Volver al archivo</a>
 
   </div>
 
 </body>
 </html>
+
