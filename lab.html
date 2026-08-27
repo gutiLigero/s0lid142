@@ -39,7 +39,7 @@
       padding-bottom: 20px;
     }
 
-    .nav-link {
+    .nav-link, .back-link {
       color: var(--text-muted);
       text-decoration: none;
       font-size: 0.85rem;
@@ -47,10 +47,12 @@
       letter-spacing: 2px;
       transition: color 0.2s;
       display: inline-block;
-      margin-bottom: 20px;
     }
 
-    .nav-link:hover { color: var(--accent-neon); }
+    .nav-link { margin-bottom: 20px; }
+    .back-link { margin-top: 10px; }
+
+    .nav-link:hover, .back-link:hover { color: var(--accent-neon); }
 
     h1 {
       font-size: 2rem;
@@ -193,7 +195,6 @@
     </header>
 
     <main>
-      <!-- Próximo Lanzamiento (Coming Soon) -->
       <div class="project-card coming-soon-card">
         <div class="project-content-wrapper">
           <div class="project-cover">
@@ -213,7 +214,6 @@
         </div>
       </div>
 
-      <!-- Canción 1: Totes por el Euska -->
       <a href="https://distrokid.com/hyperfollow/s0lid142/totes-por-el-euska?ref=release" target="_blank" class="project-card">
         <div class="project-content-wrapper">
           <div class="project-cover">
@@ -233,7 +233,6 @@
         </div>
       </a>
 
-      <!-- Canción 2: Ceros en Celo -->
       <a href="https://distrokid.com/hyperfollow/s0lid142/ceros-en-celo?ref=release" target="_blank" class="project-card">
         <div class="project-content-wrapper">
           <div class="project-cover">
@@ -252,6 +251,9 @@
           </div>
         </div>
       </a>
+      
+      <a href="index.html" class="back-link">← Volver al Archivo Principal</a>
+
     </main>
 
     <footer>
