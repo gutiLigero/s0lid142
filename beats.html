@@ -435,10 +435,6 @@ const STEP_COUNT = 16;
 /* =========================================================================
    2. BUS MÁSTER: cada pad -> su propia ganancia -> masterGain -> limiter
    ========================================================================= */
-// 'interactive' prioriza latencia mínima — clave para tocar los pads en vivo.
-// Debe fijarse antes de crear cualquier nodo de Tone.
-Tone.setContext(new Tone.Context({ latencyHint: 'interactive' }));
-
 const limiter = new Tone.Limiter(-1).toDestination();
 const masterGain = new Tone.Gain(0.85).connect(limiter);
 
