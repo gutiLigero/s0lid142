@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intervalo Diario — Ear Trainer</title>
+<style>
+  :root {
+    --amber: #ffb000;
+    --amber-dim: #b9740a;
+    --green: #3fd17e;
+    --green-dim: #1f5a3a;
+    --panel: #151518;
+    --panel-border: #2d2d35;
+    --bg: #121215;
+    --text: #e0e0e6;
+    --muted: #6a6a76;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 10px;
+  }
+
+  .chassis {
+    background: #1a1a1f;
+    padding: 22px 28px;
+    border-radius: 10px;
+    border: 3px solid var(--panel-border);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 2px 5px rgba(255,255,255,0.05);
+    position: relative;
+    max-width: 640px;
+    width: 100%;
+  }
+  .chassis::before, .chassis::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 16px;
+    background: linear-gradient(90deg, #5c2c16, #3b1a0b); border-radius: 4px;
+  }
+  .chassis::before { left: -19px; }
+  .chassis::after { right: -19px; }
+
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 2px solid var(--panel-border); padding-bottom: 12px; margin-bottom: 16px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  header h1 {
+    margin: 0; color: var(--amber); letter-spacing: 2px; font-size: 1.25rem; text-transform: uppercase;
+  }
+  .subtitle { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+
+  .lcd {
+    background: #0b0b0d; border: 1px solid var(--panel-border); border-radius: 6px;
+    padding: 8px 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+    font-size: 0.75rem; color: var(--amber); margin-bottom: 16px;
+  }
+  .lcd span b { color: #fff; }
+
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-tab {
+    flex: 1; background: var(--panel); border: 1px solid var(--panel-border); color: var(--muted);
+    padding: 8px; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .mode-tab.active { color: var(--amber); border-color: var(--amber); background: #201c14; }
+
+  .module-box {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 6px;
+    padding: 14px; margin-bottom: 14px;
+  }
+  .module-box h3 {
+    font-size: 0.68rem; color: var(--amber); margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1.5px;
+  }
+
+  .playback-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    background: #23232b; color: var(--amber); border: 1px solid var(--amber-dim);
+    padding: 9px 14px; border-radius: 5px; cursor: pointer; font-family: inherit; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .btn:hover:not(:disabled) { background: var(--amber); color: #121215; }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--muted); border-color: var(--panel-border); }
+  .btn.ghost:hover:not(:disabled) { background: #23232b; color: var(--text); }
+
+  select {
+    background: #23232b; color: #fff; border: 1px solid #444; padding: 6px 8px; border-radius: 4px;
+    font-family: inherit; font-size: 0.72rem;
+  }
+
+  /* --- Matriz de intervalos: elemento distintivo, tira tipo patch-bay --- */
+  .matrix {
+    display: flex; gap: 3px; margin: 12px 0 6px 0;
+  }
+  .matrix-cell {
+    flex: 1; text-align: center; padding: 6px 2px; border-radius: 3px;
+    background: #0b0b0d; border: 1px solid var(--panel-border);
+    font-size: 0.62rem; color: var(--muted); transition: background 0.2s, color 0.2s, border-color 0.2s;
+  }
+  .matrix-cell.far { background: #1c1c22; color: #8a8a96; border-color: #33333d; }
+  .matrix-cell.close { background: #3a2e12; color: var(--amber); border-color: var(--amber-dim); }
+  .matrix-cell.hit { background: var(--green-dim); color: var(--green); border-color: var(--green); }
+  .matrix-caption { font-size: 0.6rem; color: var(--muted); text-align: center; margin-bottom: 14px; }
+
+  /* --- Historial de intentos (filas tipo Wordle) --- */
+  .history { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; min-height: 8px; }
+  .history-row {
+    display: flex; align-items: center; gap: 8px; background: #0b0b0d; border: 1px solid var(--panel-border);
+    border-radius: 4px; padding: 6px 10px; font-size: 0.72rem; animation: rowIn 0.25s ease-out;
+  }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+  .history-row .swatch {
+    width: 22px; height: 22px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; flex-shrink: 0;
+  }
+  .swatch.far { background: #1c1c22; color: #8a8a96; }
+  .swatch.close { background: var(--amber-dim); color: #1a1206; }
+  .swatch.hit { background: var(--green); color: #06170e; }
+  .history-row .name { flex: 1; color: var(--text); }
+  .history-row .hint { color: var(--muted); font-size: 0.68rem; }
+
+  /* --- Grid de botones de intervalo (13 opciones) --- */
+  .interval-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px; }
+  .ivl-btn {
+    background: #23232b; border: 1px solid var(--panel-border); color: var(--text);
+    padding: 8px 4px; border-radius: 5px; cursor: pointer; font-family: inherit; text-align: center;
+  }
+  .ivl-btn .abbr { display: block; font-weight: bold; color: var(--amber); font-size: 0.82rem; }
+  .ivl-btn .full { display: block; font-size: 0.58rem; color: var(--muted); margin-top: 2px; line-height: 1.2; }
+  .ivl-btn:hover:not(:disabled) { border-color: var(--amber); }
+  .ivl-btn:disabled { cursor: not-allowed; opacity: 0.55; }
+  .ivl-btn.fb-far { background: #1c1c22; }
+  .ivl-btn.fb-far .abbr { color: #8a8a96; }
+  .ivl-btn.fb-close { background: #2c2306; border-color: var(--amber-dim); }
+  .ivl-btn.fb-hit { background: var(--green-dim); border-color: var(--green); }
+  .ivl-btn.fb-hit .abbr { color: var(--green); }
+
+  .result-panel {
+    background: #0f1410; border: 1px solid var(--green-dim); border-radius: 6px; padding: 14px;
+    margin-bottom: 14px; display: none;
+  }
+  .result-panel.show { display: block; }
+  .result-panel.lost { background: #17100f; border-color: #5a2f1f; }
+  .result-panel h4 { margin: 0 0 6px 0; color: var(--green); font-size: 0.85rem; }
+  .result-panel.lost h4 { color: #e0703f; }
+  .result-panel p { margin: 4px 0; font-size: 0.76rem; color: var(--text); }
+  .result-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  .stats-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat-box { flex: 1; min-width: 70px; background: #0b0b0d; border: 1px solid var(--panel-border); border-radius: 5px; padding: 8px; text-align: center; }
+  .stat-box .num { font-size: 1.2rem; color: var(--amber); font-weight: bold; }
+  .stat-box .lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .dist-row { display: flex; align-items: center; gap: 6px; font-size: 0.68rem; margin-top: 4px; }
+  .dist-row .bar-track { flex: 1; background: #0b0b0d; border-radius: 3px; overflow: hidden; height: 14px; }
+  .dist-row .bar-fill { background: var(--amber-dim); height: 100%; min-width: 2px; }
+  .dist-row .bar-fill.current { background: var(--green); }
+
+  footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .back-btn {
+    background: #23232b; color: var(--amber); border: 1px solid var(--amber); padding: 6px 12px;
+    border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.78rem;
+  }
+  .back-btn:hover { background: var(--amber); color: #121215; }
+  .power-note { font-size: 0.66rem; color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .history-row { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="chassis">
+  <header>
+    <h1>Intervalo Diario</h1>
+    <span class="subtitle">Ear Trainer · Reto de Intervalos</span>
+  </header>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-daily" type="button">🎯 Reto diario</button>
+    <button class="mode-tab" id="tab-free" type="button">🎲 Modo libre</button>
+  </div>
+
+  <div class="lcd" id="lcd">
+    <span>DÍA <b id="lcdDay">--</b></span>
+    <span>INTENTO <b id="lcdAttempt">0/6</b></span>
+    <span>RACHA <b id="lcdStreak">0</b></span>
+  </div>
+
+  <div class="module-box">
+    <h3>Reproducir</h3>
+    <div class="playback-row">
+      <button class="btn" id="btnPlay">▶ Reproducir intervalo</button>
+      <select id="playMode">
+        <option value="melodic-up">Melódico ascendente</option>
+        <option value="melodic-down">Melódico descendente</option>
+        <option value="harmonic">Armónico (simultáneo)</option>
+      </select>
+      <button class="btn ghost" id="btnFree" style="display:none;">🎲 Nuevo intervalo</button>
+    </div>
+    <p class="power-note" style="margin-top:8px;">Espacio / R = repetir el intervalo actual.</p>
+  </div>
+
+  <div class="module-box">
+    <h3>Matriz de intervalos (0–12 semitonos)</h3>
+    <div class="matrix" id="matrix"></div>
+    <div class="matrix-caption">Cada casilla se colorea con el resultado más cercano que hayas obtenido en esa distancia.</div>
+  </div>
+
+  <div class="module-box">
+    <h3>Tus intentos</h3>
+    <div class="history" id="history"></div>
+    <div class="interval-grid" id="ivlGrid"></div>
+  </div>
+
+  <div class="result-panel" id="resultPanel">
+    <h4 id="resultTitle"></h4>
+    <p id="resultDetail"></p>
+    <div class="result-actions">
+      <button class="btn" id="btnShare">📋 Copiar resultado</button>
+      <button class="btn ghost" id="btnPlayAgain" style="display:none;">🎲 Otra ronda libre</button>
+    </div>
+  </div>
+
+  <div class="module-box">
+    <h3>Estadísticas</h3>
+    <div class="stats-row">
+      <div class="stat-box"><div class="num" id="statPlayed">0</div><div class="lbl">Jugadas</div></div>
+      <div class="stat-box"><div class="num" id="statWinPct">0%</div><div class="lbl">Victorias</div></div>
+      <div class="stat-box"><div class="num" id="statStreak">0</div><div class="lbl">Racha actual</div></div>
+      <div class="stat-box"><div class="num" id="statMaxStreak">0</div><div class="lbl">Mejor racha</div></div>
+    </div>
+    <div id="distChart" style="margin-top:10px;"></div>
+  </div>
+
+  <footer>
+    <a href="index.html" class="back-btn">← Volver al inicio</a>
+    <span class="power-note">Todos oyen el mismo intervalo cada día — compara tu resultado sin revelar la respuesta.</span>
+  </footer>
+</div>
+
+<script>
+/* =========================================================================
+   INTERVALO DIARIO — motor de audio, generación determinista y UI
+   ========================================================================= */
+
+const INTERVALS = [
+  { semi: 0,  abbr: '1J',  name: 'Unísono' },
+  { semi: 1,  abbr: '2m',  name: 'Segunda menor' },
+  { semi: 2,  abbr: '2M',  name: 'Segunda mayor' },
+  { semi: 3,  abbr: '3m',  name: 'Tercera menor' },
+  { semi: 4,  abbr: '3M',  name: 'Tercera mayor' },
+  { semi: 5,  abbr: '4J',  name: 'Cuarta justa' },
+  { semi: 6,  abbr: 'TT',  name: 'Tritono' },
+  { semi: 7,  abbr: '5J',  name: 'Quinta justa' },
+  { semi: 8,  abbr: '6m',  name: 'Sexta menor' },
+  { semi: 9,  abbr: '6M',  name: 'Sexta mayor' },
+  { semi: 10, abbr: '7m',  name: 'Séptima menor' },
+  { semi: 11, abbr: '7M',  name: 'Séptima mayor' },
+  { semi: 12, abbr: '8va', name: 'Octava' },
+];
+const MAX_ATTEMPTS = 6;
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const EPOCH = new Date(2025, 0, 1); // referencia para numerar los días
+
+function noteName(midi) {
+  return NOTE_NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+}
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+/* ---------- PRNG determinista (mulberry32) sembrado por fecha ---------- */
+function mulberry32(seed) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function seedFromDateString(dateStr) {
+  let h = 0;
+  for (let i = 0; i < dateStr.length; i++) { h = (Math.imul(h, 31) + dateStr.charCodeAt(i)) | 0; }
+  return h;
+}
+function todayString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function dayNumber() {
+  const d = new Date();
+  const utcToday = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const utcEpoch = Date.UTC(EPOCH.getFullYear(), EPOCH.getMonth(), EPOCH.getDate());
+  return Math.max(1, Math.floor((utcToday - utcEpoch) / 86400000) + 1);
+}
+
+function generatePuzzle(rng) {
+  // Se excluye el unísono (0) del reto: es demasiado fácil/ambiguo por oído.
+  const semi = 1 + Math.floor(rng() * 12);
+  const rootMidi = 48 + Math.floor(rng() * 12); // C3..B3
+  return { semi, rootMidi, interval: INTERVALS[semi] };
+}
+
+/* =========================================================================
+   AUDIO ENGINE (Web Audio API puro, sin dependencias)
+   ========================================================================= */
+let audioCtx = null;
+let masterGain = null;
+
+function ensureAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.5;
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+});
+
+function playTone(freq, when, dur = 0.85) {
+  const ctx = ensureAudioContext();
+  const osc = ctx.createOscillator();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, when);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, when);
+  gain.gain.linearRampToValueAtTime(0.55, when + 0.025);
+  gain.gain.linearRampToValueAtTime(0.4, when + dur * 0.6);
+  gain.gain.linearRampToValueAtTime(0, when + dur);
+  osc.connect(gain).connect(masterGain);
+  osc.start(when);
+  osc.stop(when + dur + 0.05);
+}
+
+function playPuzzleAudio(puzzle, mode) {
+  ensureAudioContext();
+  const now = audioCtx.currentTime + 0.05;
+  const rootFreq = midiToFreq(puzzle.rootMidi);
+  const targetFreq = midiToFreq(puzzle.rootMidi + puzzle.semi);
+  if (mode === 'harmonic') {
+    playTone(rootFreq, now, 1.3);
+    playTone(targetFreq, now, 1.3);
+  } else if (mode === 'melodic-down') {
+    playTone(targetFreq, now, 0.85);
+    playTone(rootFreq, now + 0.95, 0.85);
+  } else {
+    playTone(rootFreq, now, 0.85);
+    playTone(targetFreq, now + 0.95, 0.85);
+  }
+}
+
+/* =========================================================================
+   ESTADO Y PERSISTENCIA (localStorage)
+   ========================================================================= */
+const STATS_KEY = 'intervalo_stats_v1';
+const DAILY_KEY = 'intervalo_daily_v1';
+
+function loadStats() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STATS_KEY));
+    if (raw && typeof raw === 'object') return raw;
+  } catch (e) { /* corrupto o inexistente: se usa el valor por defecto */ }
+  return { played: 0, wins: 0, streak: 0, maxStreak: 0, distribution: [0, 0, 0, 0, 0, 0] };
+}
+function saveStats(stats) { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); }
+
+function loadDailyProgress() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(DAILY_KEY));
+    if (raw && raw.date === todayString()) return raw;
+  } catch (e) { /* corrupto o inexistente */ }
+  return null;
+}
+function saveDailyProgress(progress) {
+  localStorage.setItem(DAILY_KEY, JSON.stringify({ date: todayString(), ...progress }));
+}
+
+let stats = loadStats();
+
+/* =========================================================================
+   ESTADO DE PARTIDA (compartido por reto diario y modo libre)
+   ========================================================================= */
+let mode = 'daily';           // 'daily' | 'free'
+let puzzle = null;
+let guesses = [];             // lista de semitonos adivinados
+let gameOver = false;
+let dailyCountedInStats = false;
+
+const els = {
+  tabDaily: document.getElementById('tab-daily'),
+  tabFree: document.getElementById('tab-free'),
+  lcdDay: document.getElementById('lcdDay'),
+  lcdAttempt: document.getElementById('lcdAttempt'),
+  lcdStreak: document.getElementById('lcdStreak'),
+  btnPlay: document.getElementById('btnPlay'),
+  btnFree: document.getElementById('btnFree'),
+  playModeSel: document.getElementById('playMode'),
+  matrix: document.getElementById('matrix'),
+  history: document.getElementById('history'),
+  ivlGrid: document.getElementById('ivlGrid'),
+  resultPanel: document.getElementById('resultPanel'),
+  resultTitle: document.getElementById('resultTitle'),
+  resultDetail: document.getElementById('resultDetail'),
+  btnShare: document.getElementById('btnShare'),
+  btnPlayAgain: document.getElementById('btnPlayAgain'),
+  statPlayed: document.getElementById('statPlayed'),
+  statWinPct: document.getElementById('statWinPct'),
+  statStreak: document.getElementById('statStreak'),
+  statMaxStreak: document.getElementById('statMaxStreak'),
+  distChart: document.getElementById('distChart'),
+};
+
+/* ---------- Construcción de la matriz (13 casillas) ---------- */
+INTERVALS.forEach(iv => {
+  const cell = document.createElement('div');
+  cell.className = 'matrix-cell';
+  cell.id = `matrix-${iv.semi}`;
+  cell.textContent = iv.abbr;
+  els.matrix.appendChild(cell);
+});
+
+/* ---------- Construcción del grid de botones de intervalo ---------- */
+INTERVALS.forEach(iv => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'ivl-btn';
+  btn.id = `ivl-btn-${iv.semi}`;
+  btn.innerHTML = `<span class="abbr">${iv.abbr}</span><span class="full">${iv.name}</span>`;
+  btn.addEventListener('click', () => submitGuess(iv.semi));
+  els.ivlGrid.appendChild(btn);
+});
+
+function feedbackClass(diffAbs) {
+  if (diffAbs === 0) return 'hit';
+  if (diffAbs <= 2) return 'close';
+  return 'far';
+}
+// Prioridad para no perder información ya descubierta: hit > close > far.
+const FEEDBACK_RANK = { far: 0, close: 1, hit: 2 };
+
+function resetMatrixAndButtons() {
+  INTERVALS.forEach(iv => {
+    const cell = document.getElementById(`matrix-${iv.semi}`);
+    cell.className = 'matrix-cell';
+    const btn = document.getElementById(`ivl-btn-${iv.semi}`);
+    btn.className = 'ivl-btn';
+    btn.disabled = false;
+  });
+}
+
+function applyFeedbackToCell(semi, cls) {
+  const cell = document.getElementById(`matrix-${semi}`);
+  const btn = document.getElementById(`ivl-btn-${semi}`);
+  const current = [...cell.classList].find(c => c in FEEDBACK_RANK);
+  if (!current || FEEDBACK_RANK[cls] > FEEDBACK_RANK[current]) {
+    cell.className = `matrix-cell ${cls}`;
+    btn.className = `ivl-btn fb-${cls}`;
+  }
+}
+
+function renderHistoryRow(guessSemi) {
+  const diff = guessSemi - puzzle.semi;
+  const cls = feedbackClass(Math.abs(diff));
+  const iv = INTERVALS[guessSemi];
+  const row = document.createElement('div');
+  row.className = 'history-row';
+  const icon = cls === 'hit' ? '✓' : (diff > 0 ? '▼' : '▲');
+  const hint = cls === 'hit' ? '¡Exacto!' : (diff > 0 ? 'El real es más estrecho' : 'El real es más amplio');
+  row.innerHTML = `
+    <div class="swatch ${cls}">${icon}</div>
+    <div class="name">${iv.abbr} · ${iv.name}</div>
+    <div class="hint">${hint}</div>
+  `;
+  els.history.appendChild(row);
+  applyFeedbackToCell(guessSemi, cls);
+}
+
+function updateLcd() {
+  els.lcdDay.textContent = mode === 'daily' ? `#${dayNumber()}` : '— libre —';
+  els.lcdAttempt.textContent = `${guesses.length}/${MAX_ATTEMPTS}`;
+  els.lcdStreak.textContent = stats.streak;
+}
+
+function setButtonsDisabled(disabled) {
+  INTERVALS.forEach(iv => { document.getElementById(`ivl-btn-${iv.semi}`).disabled = disabled; });
+}
+
+function submitGuess(semi) {
+  if (gameOver || !puzzle) return;
+  guesses.push(semi);
+  renderHistoryRow(semi);
+  updateLcd();
+
+  const correct = semi === puzzle.semi;
+  const exhausted = guesses.length >= MAX_ATTEMPTS;
+
+  if (correct || exhausted) {
+    endGame(correct);
+  }
+  persistProgress();
+}
+
+function endGame(won) {
+  gameOver = true;
+  setButtonsDisabled(true);
+  els.resultPanel.classList.add('show');
+  els.resultPanel.classList.toggle('lost', !won);
+
+  const rootStr = noteName(puzzle.rootMidi);
+  const targetStr = noteName(puzzle.rootMidi + puzzle.semi);
+
+  if (won) {
+    els.resultTitle.textContent = `¡Correcto! ${guesses.length}/${MAX_ATTEMPTS}`;
+  } else {
+    els.resultTitle.textContent = `Sin suerte esta vez`;
+  }
+  els.resultDetail.textContent = `${rootStr} → ${targetStr}  —  ${puzzle.interval.abbr} (${puzzle.interval.name})`;
+
+  if (mode === 'daily' && !dailyCountedInStats) {
+    dailyCountedInStats = true;
+    stats.played += 1;
+    if (won) {
+      stats.wins += 1;
+      stats.streak += 1;
+      stats.maxStreak = Math.max(stats.maxStreak, stats.streak);
+      stats.distribution[guesses.length - 1] += 1;
+    } else {
+      stats.streak = 0;
+    }
+    saveStats(stats);
+  }
+  renderStats();
+  updateLcd();
+
+  els.btnPlayAgain.style.display = mode === 'free' ? 'inline-block' : 'none';
+}
+
+function buildShareText() {
+  const rows = guesses.map(semi => {
+    const diff = semi - puzzle.semi;
+    if (diff === 0) return '🟩';
+    const box = Math.abs(diff) <= 2 ? '🟨' : '⬛';
+    return box + (diff > 0 ? '▼' : '▲');
+  });
+  const label = mode === 'daily'
+    ? `Intervalo Diario #${dayNumber()} ${gameOver && guesses[guesses.length - 1] === puzzle.semi ? guesses.length : 'X'}/${MAX_ATTEMPTS}`
+    : `Intervalo (modo libre) ${gameOver && guesses[guesses.length - 1] === puzzle.semi ? guesses.length : 'X'}/${MAX_ATTEMPTS}`;
+  return `${label}\n${rows.join(' ')}\n🎧 entrenamiento auditivo`;
+}
+
+els.btnShare.addEventListener('click', () => {
+  const text = buildShareText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      () => { els.btnShare.textContent = '✅ Copiado'; setTimeout(() => els.btnShare.textContent = '📋 Copiar resultado', 1500); },
+      () => fallbackShare(text)
+    );
+  } else {
+    fallbackShare(text);
+  }
+});
+function fallbackShare(text) {
+  window.prompt('Copia tu resultado:', text);
+}
+
+/* =========================================================================
+   ESTADÍSTICAS
+   ========================================================================= */
+function renderStats() {
+  els.statPlayed.textContent = stats.played;
+  els.statWinPct.textContent = stats.played ? `${Math.round((stats.wins / stats.played) * 100)}%` : '0%';
+  els.statStreak.textContent = stats.streak;
+  els.statMaxStreak.textContent = stats.maxStreak;
+
+  const maxCount = Math.max(1, ...stats.distribution);
+  els.distChart.innerHTML = '';
+  stats.distribution.forEach((count, i) => {
+    const row = document.createElement('div');
+    row.className = 'dist-row';
+    const isCurrent = gameOver && mode === 'daily' && guesses.length === i + 1 && guesses[guesses.length - 1] === puzzle.semi;
+    row.innerHTML = `
+      <span>${i + 1}</span>
+      <div class="bar-track"><div class="bar-fill${isCurrent ? ' current' : ''}" style="width:${(count / maxCount) * 100}%"></div></div>
+      <span>${count}</span>
+    `;
+    els.distChart.appendChild(row);
+  });
+}
+
+/* =========================================================================
+   CICLO DE PARTIDA: arrancar reto diario / modo libre
+   ========================================================================= */
+function startDaily() {
+  mode = 'daily';
+  els.tabDaily.classList.add('active');
+  els.tabFree.classList.remove('active');
+  els.btnFree.style.display = 'none';
+  els.playModeSel.value = 'melodic-up';
+
+  const saved = loadDailyProgress();
+  const rng = mulberry32(seedFromDateString(todayString()));
+  puzzle = generatePuzzle(rng);
+
+  resetMatrixAndButtons();
+  els.history.innerHTML = '';
+  els.resultPanel.classList.remove('show');
+  guesses = [];
+  gameOver = false;
+  dailyCountedInStats = !!(saved && saved.countedInStats);
+
+  if (saved && Array.isArray(saved.guesses)) {
+    saved.guesses.forEach(semi => { guesses.push(semi); renderHistoryRow(semi); });
+    if (saved.gameOver) {
+      endGameFromReplay(saved); // reconstruye el resultado sin recontar en stats
+    }
+  }
+  updateLcd();
+  renderStats();
+}
+
+function endGameFromReplay(saved) {
+  // Reconstituye el estado final sin contar de nuevo en las estadísticas.
+  gameOver = true;
+  setButtonsDisabled(true);
+  const won = guesses[guesses.length - 1] === puzzle.semi;
+  els.resultPanel.classList.add('show');
+  els.resultPanel.classList.toggle('lost', !won);
+  const rootStr = noteName(puzzle.rootMidi);
+  const targetStr = noteName(puzzle.rootMidi + puzzle.semi);
+  els.resultTitle.textContent = won ? `¡Correcto! ${guesses.length}/${MAX_ATTEMPTS}` : 'Sin suerte esta vez';
+  els.resultDetail.textContent = `${rootStr} → ${targetStr}  —  ${puzzle.interval.abbr} (${puzzle.interval.name})`;
+  els.btnPlayAgain.style.display = 'none';
+}
+
+function startFree() {
+  mode = 'free';
+  els.tabFree.classList.add('active');
+  els.tabDaily.classList.remove('active');
+  els.btnFree.style.display = 'inline-block';
+
+  const rng = Math.random;
+  puzzle = generatePuzzle(rng);
+  resetMatrixAndButtons();
+  els.history.innerHTML = '';
+  els.resultPanel.classList.remove('show');
+  guesses = [];
+  gameOver = false;
+  updateLcd();
+  renderStats();
+}
+
+function persistProgress() {
+  if (mode !== 'daily') return;
+  saveDailyProgress({ guesses, gameOver, countedInStats: dailyCountedInStats });
+}
+
+els.tabDaily.addEventListener('click', startDaily);
+els.tabFree.addEventListener('click', startFree);
+els.btnFree.addEventListener('click', startFree);
+els.btnPlayAgain.addEventListener('click', startFree);
+
+els.btnPlay.addEventListener('click', () => { if (puzzle) playPuzzleAudio(puzzle, els.playModeSel.value); });
+window.addEventListener('keydown', (e) => {
+  if ((e.key === ' ' || e.key.toLowerCase() === 'r') && puzzle) {
+    e.preventDefault();
+    playPuzzleAudio(puzzle, els.playModeSel.value);
+  }
+});
+
+/* ---------- Arranque ---------- */
+startDaily();
+</script>
+</body>
+</html>
